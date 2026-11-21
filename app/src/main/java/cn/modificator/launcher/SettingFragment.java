@@ -387,7 +387,7 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
   public void onClick(View v) {
     int id = v.getId();
     if (id == R.id.toBack || id == R.id.rootView) {
-      getActivity().onBackPressed();
+      closeSettings();
     } else if (id == R.id.deleteApp) {
       handleDeleteApp();
     } else if (id == R.id.showStatusBar) {
@@ -428,14 +428,14 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
 
   private void handleDeleteApp() {
     listener.onEnterManageMode();
-    getActivity().onBackPressed();
+    closeSettings();
   }
 
   private void handleToggleStatusBar() {
     boolean newValue = !config.isShowStatusBar();
     config.setShowStatusBar(newValue);
     listener.onShowStatusBarChanged(newValue);
-    getActivity().onBackPressed();
+    closeSettings();
   }
 
   private void handleToggleDivider() {
@@ -443,7 +443,7 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
     config.setHideDivider(newValue);
     hideDivider.setText(newValue ? "显示分隔线" : "隐藏分隔线");
     listener.onHideDividerChanged(newValue);
-    getActivity().onBackPressed();
+    closeSettings();
   }
 
   private void handleFtp() {
@@ -518,7 +518,7 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
         boolean newValue = !config.isShowCustomIcon();
         config.setShowCustomIcon(newValue);
         listener.onShowCustomIconChanged(newValue);
-        getActivity().onBackPressed();
+        closeSettings();
       }
     });
   }
@@ -538,11 +538,18 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
     boolean show = !config.isShowLargeClock();
     config.setShowLargeClock(show);
     showLargeClock.getPaint().setStrikeThruText(!show);
-    Activity activity = getActivity();
     OnSettingChangeListener settingListener = listener;
-    if (activity != null) {
-      activity.getFragmentManager().popBackStackImmediate();
+    if (settingListener != null) {
       settingListener.onShowLargeClockChanged(show);
+    }
+    closeSettings();
+  }
+
+  /** 通过宿主 Activity 关闭设置页面 */
+  private void closeSettings() {
+    Activity activity = getActivity();
+    if (activity != null) {
+      activity.onBackPressed();
     }
   }
 
@@ -693,7 +700,7 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
       }
     } else if (requestCode == 10002) {
       WifiControl.reloadWifiName();
-      getActivity().onBackPressed();
+      closeSettings();
     }
   }
 

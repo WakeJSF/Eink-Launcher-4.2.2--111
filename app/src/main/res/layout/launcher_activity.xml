@@ -1,11 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/launcherBg"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="@color/mainBgColor">
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:id="@+id/launcherBg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:background="@color/mainBgColor">
 
     <LinearLayout
         android:id="@+id/largeClockContainer"
@@ -158,3 +162,11 @@
             android:visibility="gone" />
     </FrameLayout>
 </LinearLayout>
+
+    <!-- SettingFragment container overlay -->
+    <FrameLayout
+        android:id="@+id/settingContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+</FrameLayout>

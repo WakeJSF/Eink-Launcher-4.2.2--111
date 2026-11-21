@@ -70,6 +70,7 @@ public class Launcher extends AppCompatActivity
     SettingFragment.OnSettingChangeListener {
 
   private static final int REQUEST_DEVICE_ADMIN = 10001;
+  private static final String TAG_SETTINGS_FRAGMENT = "settings_fragment";
 
   // ---- Views ----
   private EInkLauncherView launcherView;
@@ -1251,7 +1252,8 @@ public class Launcher extends AppCompatActivity
   // =========================================================================
 
   private boolean handleLauncherKeyDown(int keyCode, KeyEvent event) {
-    boolean hasFragment = getFragmentManager().getBackStackEntryCount() > 0;
+    boolean hasFragment = isSettingsFragmentShown()
+        || getSupportFragmentManager().getBackStackEntryCount() > 0;
     if (hasFragment) {
       if (keyCode == KeyEvent.KEYCODE_BACK) {
         onBackPressed();
@@ -1294,7 +1296,9 @@ public class Launcher extends AppCompatActivity
   }
 
   private boolean handleLauncherKeyUp(int keyCode, KeyEvent event) {
-    if (getFragmentManager().getBackStackEntryCount() != 0 || !isLauncherNavigationKey(keyCode)) {
+    if (isSettingsFragmentShown()
+        || getSupportFragmentManager().getBackStackEntryCount() != 0
+        || !isLauncherNavigationKey(keyCode)) {
       return false;
     }
     if (isConfirmKey(keyCode)) {
@@ -1497,12 +1501,41 @@ public class Launcher extends AppCompatActivity
     }
   }
 
+  /** 显示设置页面（Fragment 覆盖层） */
   private void openSettingsFragment() {
-    Intent intent = new Intent(this, SettingActivity.class);
-    Bundle bundle = new Bundle();
-    // 注意：由于 Listener 接口不是 Parcelable，不能直接传递
-    // SettingActivity 将通过其他方式获取 listener（如静态注册或广播）
-    startActivity(intent);
+    View container = findViewById(R.id.settingContainer);
+    if (container == null) {
+      return;
+    }
+    container.setVisibility(View.VISIBLE);
+    androidx.fragment.app.FragmentManager fm = getSupportFragmentManager();
+    if (fm.findFragmentByTag(TAG_SETTINGS_FRAGMENT) == null) {
+      fm.beginTransaction()
+          .add(R.id.settingContainer, new SettingFragment(), TAG_SETTINGS_FRAGMENT)
+          .commitNow();
+    }
+    focusArea = FOCUS_SETTING;
+    updateFooterFocus();
+  }
+
+  /** 关闭设置页面 */
+  private void closeSettingsFragment() {
+    androidx.fragment.app.FragmentManager fm = getSupportFragmentManager();
+    androidx.fragment.app.Fragment fragment = fm.findFragmentByTag(TAG_SETTINGS_FRAGMENT);
+    if (fragment != null) {
+      fm.beginTransaction().remove(fragment).commitNow();
+    }
+    View container = findViewById(R.id.settingContainer);
+    if (container != null) {
+      container.setVisibility(View.GONE);
+    }
+    clearKeyboardFocus();
+  }
+
+  /** 设置页面是否正在显示（基于容器可见性，避免异步 commit 时序问题） */
+  private boolean isSettingsFragmentShown() {
+    View container = findViewById(R.id.settingContainer);
+    return container != null && container.getVisibility() == View.VISIBLE;
   }
 
   private void openClockActivity() {
@@ -1576,7 +1609,13 @@ public class Launcher extends AppCompatActivity
 
   @Override
   public void onBackPressed() {
-    if (getFragmentManager().getBackStackEntryCount() > 0) {
+    // 优先关闭设置页面
+    if (isSettingsFragmentShown()) {
+      closeSettingsFragment();
+      return;
+    }
+    // 保留原有的 Fragment 回退栈处理
+    if (getSupportFragmentManager().getBackStackEntryCount() > 0) {
       super.onBackPressed();
       config.setFontSize(config.getFontSize());
     }
