@@ -22,6 +22,8 @@ import cn.modificator.launcher.R;
  *
  * <p>墨水屏硬件刷新接口各厂商实现完全不同，没有统一 Android API。本类按优先级依次尝试：
  * <ol>
+ *   <li> Boyue/Boeye 专用（本设备 T80S 已实机确认）：反射 android.view.View.byFullRefresh()。
+ *        该方法由厂商注入 framework（framework.odex 内），原厂桌面正是靠它全刷。</li>
  *   <li>广播：发常见国产 E-Ink 全刷广播（墨案/Allwinner 等已验证 android.eink.force.refresh）</li>
  *   <li>反射厂商 SDK：Onyx(Boox) EpdController、Yota EpdManager 等</li>
  *   <li>通用兜底：全屏黑白闪屏覆盖层，借助系统窗口变化触发 EPD 全刷</li>
@@ -35,6 +37,7 @@ public final class EpdRefresh {
 
   /** 国产墨水屏常见的强制全刷广播（不同 ROM 支持其一即可） */
   private static final String[] REFRESH_ACTIONS = new String[] {
+      "com.by.android.refresh.start",          // Boyue/Boeye 原厂桌面全刷广播（本机确认存在）
       "android.eink.force.refresh",
       "android.intent.action.EPD_FULL_REFRESH",
       "com.yotadevices.intent.action.EPD_REFRESH",
@@ -52,15 +55,68 @@ public final class EpdRefresh {
   public static void fullRefresh(Activity activity) {
     if (activity == null) return;
 
+    // 第一优先：本设备(Boyue T80S)确认可用的 View.byFullRefresh() 隐藏方法
+    boolean boyueOk = tryBoyueViewFullRefresh();
     int sent = sendRefreshBroadcasts(activity);
     boolean sdkOk = tryVendorSdk(activity);
 
-    // 广播/SDK 是否真正生效无法可靠判断，统一叠加闪屏兜底，确保肉眼可见一次全刷。
-    showFlashOverlay(activity);
+    // 若前面没有一条确切成功的硬件刷新路径，再叠加闪屏兜底，确保肉眼可见一次刷新。
+    // Boyue 专用方法成功时不叠加，避免全刷过程中被黑层二次干扰。
+    if (!boyueOk) {
+      showFlashOverlay(activity);
+    }
 
     String msg = activity.getString(R.string.epd_refresh_done);
     Toast.makeText(activity, msg, Toast.LENGTH_SHORT).show();
-    Log.i(TAG, "fullRefresh: broadcasts=" + sent + ", vendorSdk=" + sdkOk);
+    Log.i(TAG, "fullRefresh: boyue=" + boyueOk + ", broadcasts=" + sent + ", vendorSdk=" + sdkOk);
+  }
+
+  /**
+   * Boyue/Boeye 专用全刷（本设备 T80S 实机已确认）。
+   *
+   * <p>反编译原厂桌面 com.boyue.app.byreader.common.utils.EInkRefresh 得知，
+   * 全刷通过反射调用 android.view.View 上被厂商注入的隐藏静态方法：
+   * <pre>
+   *   Class<?> view = Class.forName("android.view.View");
+   *   view.getDeclaredMethod("byFullRefresh").invoke(null);        // 静态，无参
+   *   view.getDeclaredMethod("setEinkUpdateMode", int.class)...
+   * </pre>
+   * 该方法本体在 framework.odex 内，编译期 SDK 无此 API，必须运行时反射。
+   *
+   * @return 是否成功调用到硬件全刷方法
+   */
+  private static boolean tryBoyueViewFullRefresh() {
+    try {
+      Class<?> viewCls = Class.forName("android.view.View");
+
+      // 方式一：直接触发全刷（原厂 EInkRefresh.byFullRefresh() 的做法）
+      try {
+        Method m = viewCls.getDeclaredMethod("byFullRefresh");
+        m.setAccessible(true);
+        Object result = m.invoke(null);
+        Log.i(TAG, "View.byFullRefresh() -> " + result);
+        return true;
+      } catch (NoSuchMethodException e) {
+        Log.d(TAG, "View.byFullRefresh() not present");
+      }
+
+      // 方式二：先设为全刷模式，再请求局部刷新触发一次全局重绘
+      try {
+        Method setMode = viewCls.getDeclaredMethod("setEinkUpdateMode", int.class);
+        setMode.setAccessible(true);
+        setMode.invoke(null, 1); // 1 = 全刷模式
+        Method local = viewCls.getDeclaredMethod("byPartRefresh");
+        local.setAccessible(true);
+        local.invoke(null);
+        Log.i(TAG, "View.setEinkUpdateMode(1)+byPartRefresh() ok");
+        return true;
+      } catch (NoSuchMethodException e) {
+        Log.d(TAG, "View E Ink mode methods not present");
+      }
+    } catch (Throwable t) {
+      Log.w(TAG, "tryBoyueViewFullRefresh failed", t);
+    }
+    return false;
   }
 
   /** 发送全刷广播，返回成功发送的条数 */
