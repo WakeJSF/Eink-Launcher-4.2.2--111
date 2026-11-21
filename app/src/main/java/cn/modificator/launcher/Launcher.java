@@ -18,6 +18,7 @@ import android.content.pm.ResolveInfo;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.BatteryManager;
 import android.os.Build;
@@ -55,6 +56,7 @@ import cn.modificator.launcher.ftpservice.FTPService;
 import cn.modificator.launcher.model.AdminReceiver;
 import cn.modificator.launcher.model.AppDataCenter;
 import cn.modificator.launcher.model.HomeEntranceService;
+import cn.modificator.launcher.model.FontManager;
 import cn.modificator.launcher.model.IconCache;
 import cn.modificator.launcher.model.WifiControl;
 import cn.modificator.launcher.widgets.AppItemBinder;
@@ -92,6 +94,7 @@ public class Launcher extends AppCompatActivity
   private Calendar calendar;
   private boolean isChina = true;
   private IconCache iconCache;
+  private FontManager fontManager;
   private LauncherAdapter adapter;
   private AppItemBinder binder;
   private boolean isSystemApp = false;
@@ -147,6 +150,7 @@ public class Launcher extends AppCompatActivity
           adapter.setFontSize(config.getFontSize());
           adapter.setAppNameLines(config.getAppNameLines());
         }
+        applyCustomFont();
         if (launcherView != null) {
           launcherView.setHideDivider(config.isHideDivider());
           launcherView.setBottomAlignIcons(config.isBottomAlignIcons());
@@ -329,6 +333,7 @@ public class Launcher extends AppCompatActivity
     }
     refreshIcons();
     WifiControl.reloadWifiName();
+    applyCustomFont();
   }
 
   @Override
@@ -480,6 +485,7 @@ public class Launcher extends AppCompatActivity
 
     // 配置 Binder、Adapter、View
     iconCache = new IconCache(this);
+    fontManager = new FontManager();
     binder = new AppItemBinder(getPackageManager());
     binder.setCallback(this);
     binder.setIconCache(iconCache);
@@ -488,6 +494,7 @@ public class Launcher extends AppCompatActivity
     adapter.setBinder(binder);
     adapter.setFontSize(config.getFontSize());
     adapter.setAppNameLines(config.getAppNameLines());
+    applyCustomFont();
     launcherView.setAdapter(adapter);
     launcherView.setOnPageChangeListener(this);
 
@@ -588,6 +595,21 @@ public class Launcher extends AppCompatActivity
   @Override
   public void onFontSizeChanged(float size) {
     adapter.setFontSize(size);
+  }
+
+  /** 应用桌面自定义字体：从 Config 读取字体文件名并加载，失败降级为系统默认 */
+  private void applyCustomFont() {
+    if (adapter == null || fontManager == null || config == null) return;
+    String fontName = config.getCustomFont();
+    Typeface typeface = fontManager.loadFont(fontName);
+    adapter.setAppNameTypeface(typeface);
+  }
+
+  @Override
+  public void onFontChanged(String fontName) {
+    config.setCustomFont(fontName);
+    if (fontManager != null) fontManager.resetFailures();
+    applyCustomFont();
   }
 
   @Override

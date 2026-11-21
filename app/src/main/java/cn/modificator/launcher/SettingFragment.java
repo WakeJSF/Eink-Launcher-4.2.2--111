@@ -37,10 +37,13 @@ import androidx.annotation.NonNull;
 
 import cn.modificator.launcher.ftpservice.FTPService;
 import cn.modificator.launcher.model.AppSortComparator;
+import cn.modificator.launcher.model.FontManager;
 import cn.modificator.launcher.model.WifiControl;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -67,6 +70,7 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
     void onRowNumChanged(int rowNum);
     void onColNumChanged(int colNum);
     void onFontSizeChanged(float size);
+    void onFontChanged(String fontName);
     void onAppNameLinesChanged(int lines);
     void onHideDividerChanged(boolean hide);
     void onShowStatusBarChanged(boolean show);
@@ -101,6 +105,8 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
   private TextView startAtBoot;
   private Config config;
   private View changeFontSize;
+  private View customFont;
+  private TextView customFontLabel;
   private View deleteApp;
   private View helpAbout;
   private View menuFtp;
@@ -178,6 +184,8 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
     themeModeSpinner = rootView.findViewById(R.id.theme_mode_spinner);
     screenOrientationSpinner = rootView.findViewById(R.id.screen_orientation_spinner);
     changeFontSize = rootView.findViewById(R.id.changeFontSize);
+    customFont = rootView.findViewById(R.id.customFont);
+    customFontLabel = rootView.findViewById(R.id.customFontLabel);
     deleteApp = rootView.findViewById(R.id.deleteApp);
     helpAbout = rootView.findViewById(R.id.helpAbout);
     menuFtp = rootView.findViewById(R.id.menu_ftp);
@@ -193,6 +201,7 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
     startAtBoot.setOnClickListener(this);
     showWifiName.setOnClickListener(this);
     changeFontSize.setOnClickListener(this);
+    customFont.setOnClickListener(this);
     deleteApp.setOnClickListener(this);
     helpAbout.setOnClickListener(this);
     menuFtp.setOnClickListener(this);
@@ -211,6 +220,15 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
     bottomAlignIcons.getPaint().setStrikeThruText(!config.isBottomAlignIcons());
     updateStartAtBootState();
     fontControl.setProgress((int) ((config.getFontSize() - 10) * 10));
+    updateCustomFontLabel();
+  }
+
+  /** 更新"桌面字体"项的副标题：显示当前字体名或"系统默认" */
+  private void updateCustomFontLabel() {
+    if (customFontLabel == null) return;
+    String name = config.getCustomFont();
+    customFontLabel.setText(name == null || name.length() == 0
+        ? getString(R.string.font_system_default) : name);
   }
 
   private void initDpadFocus(View toBack, View btnHideFontControl) {
@@ -229,6 +247,7 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
         bottomAlignIcons,
         startAtBoot,
         changeFontSize,
+        customFont,
         deleteApp,
         themeModeSpinner,
         setWallpaper,
@@ -402,6 +421,8 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
       rootView.findViewById(R.id.menuList).setVisibility(View.GONE);
       rootView.findViewById(R.id.font_control_p).setVisibility(View.VISIBLE);
       fontControl.requestFocus();
+    } else if (id == R.id.customFont) {
+      handleCustomFont();
     } else if (id == R.id.hideDivider) {
       handleToggleDivider();
     } else if (id == R.id.menu_ftp) {
@@ -444,6 +465,57 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
     hideDivider.setText(newValue ? "显示分隔线" : "隐藏分隔线");
     listener.onHideDividerChanged(newValue);
     closeSettings();
+  }
+
+  /**
+   * 弹出字体选择对话框。列出 font 目录下的 .ttf/.otf 文件，加一个"系统默认"选项。
+   * 选中后写入 Config 并通过 listener 立即应用到桌面。
+   */
+  private void handleCustomFont() {
+    final Activity activity = getActivity();
+    if (activity == null) return;
+
+    FontManager.ensureFontDirectory();
+    final List<File> fonts = FontManager.listFonts();
+    final String current = config.getCustomFont();
+
+    final String[] labels = new String[fonts.size() + 1];
+    labels[0] = getString(R.string.font_system_default);
+    int checked = 0;
+    for (int i = 0; i < fonts.size(); i++) {
+      labels[i + 1] = fonts.get(i).getName();
+      if (fonts.get(i).getName().equals(current)) {
+        checked = i + 1;
+      }
+    }
+
+    new AlertDialog.Builder(activity)
+        .setTitle(R.string.setting_custom_font)
+        .setSingleChoiceItems(labels, checked, new DialogInterface.OnClickListener() {
+          @Override
+          public void onClick(DialogInterface dialog, int which) {
+            String chosen = (which == 0) ? "" : fonts.get(which - 1).getName();
+            config.setCustomFont(chosen);
+            updateCustomFontLabel();
+            if (listener != null) {
+              listener.onFontChanged(chosen);
+            }
+            dialog.dismiss();
+            Toast.makeText(activity,
+                which == 0 ? getString(R.string.font_applied_default)
+                           : getString(R.string.font_applied) + chosen,
+                Toast.LENGTH_SHORT).show();
+          }
+        })
+        .setNegativeButton(android.R.string.cancel, null)
+        .setNeutralButton(R.string.font_open_folder, new DialogInterface.OnClickListener() {
+          @Override
+          public void onClick(DialogInterface dialog, int which) {
+            Toast.makeText(activity, FontManager.getFontDirectory().getAbsolutePath(),
+                Toast.LENGTH_LONG).show();
+          }
+        })
+        .show();
   }
 
   private void handleFtp() {

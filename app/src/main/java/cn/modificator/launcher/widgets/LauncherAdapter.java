@@ -1,5 +1,6 @@
 package cn.modificator.launcher.widgets;
 
+import android.graphics.Typeface;
 import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
@@ -64,6 +65,7 @@ public class LauncherAdapter {
 
   private float fontSize = 14;
   private int appNameLines = Integer.MAX_VALUE;
+  private Typeface appNameTypeface;
 
   // =========================================================================
   // View 绑定（包级可见，由 EInkLauncherView 调用）
@@ -101,6 +103,21 @@ public class LauncherAdapter {
 
   public float getFontSize() {
     return fontSize;
+  }
+
+  /**
+   * 设置所有 App 名称的字体。传入 null 恢复系统默认字体。
+   * 已存在和此后新建的 ViewHolder 都会应用。
+   */
+  public void setAppNameTypeface(Typeface typeface) {
+    this.appNameTypeface = typeface;
+    for (ItemViewHolder holder : holders) {
+      holder.appName.setTypeface(typeface);
+    }
+  }
+
+  public Typeface getAppNameTypeface() {
+    return appNameTypeface;
   }
 
   public void setAppNameLines(int lines) {
@@ -160,6 +177,9 @@ public class LauncherAdapter {
 
     fontSizeObservable.addObserver((Observer) holder.appName);
     holder.appName.setTextSize(TypedValue.COMPLEX_UNIT_SP, fontSize);
+    if (appNameTypeface != null) {
+      holder.appName.setTypeface(appNameTypeface);
+    }
     holder.appName.setMinLines(appNameLines == 2 ? appNameLines : 0);
     holder.appName.setMaxLines(appNameLines);
     holder.appName.setEllipsize(TextUtils.TruncateAt.END);

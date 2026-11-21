@@ -19,6 +19,7 @@ public class Config {
   public static final String KEY_APP_NAME_LINES = "appNameShowLines";
   public static final String KEY_HIDE_APPS = "hideAppsKey";
   public static final String KEY_FONT_SIZE = "launcherFontSize";
+  public static final String KEY_CUSTOM_FONT = "launcherCustomFont";
   public static final String KEY_HIDE_DIVIDER = "launcherHideDivider";
   public static final String KEY_SHOW_STATUS_BAR = "launcherShowStatusBar";
   public static final String KEY_SHOW_CUSTOM_ICON = "launcherShowCustomIcon";
@@ -54,6 +55,7 @@ public class Config {
   private int colNum = -1;
   private int rowNum = -1;
   private float fontSize = -1;
+  private String customFont;
   private int appNameLines = -1;
   private boolean hideDivider;
   private boolean showStatusBar;
@@ -195,6 +197,20 @@ public class Config {
   public void setFontSize(float fontSize) {
     this.fontSize = fontSize;
     prefs.edit().putFloat(KEY_FONT_SIZE, fontSize).apply();
+  }
+
+  // ---- 自定义桌面字体（存字体文件名，空表示系统默认） ----
+
+  public String getCustomFont() {
+    if (customFont == null) {
+      customFont = prefs.getString(KEY_CUSTOM_FONT, "");
+    }
+    return customFont;
+  }
+
+  public void setCustomFont(String fileName) {
+    this.customFont = fileName == null ? "" : fileName;
+    prefs.edit().putString(KEY_CUSTOM_FONT, this.customFont).apply();
   }
 
   // ---- 分隔线 ----

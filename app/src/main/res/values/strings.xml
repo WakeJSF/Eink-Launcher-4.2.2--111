@@ -113,4 +113,11 @@
     <string name="clean_start">Start cleaning…</string>
     <string name="clean_error">Clean error: %s</string>
     <string name="clean_done">Cleaned: %s</string>
+
+    <!-- 自定义桌面字体 -->
+    <string name="setting_custom_font">Desktop Font</string>
+    <string name="font_system_default">System Default</string>
+    <string name="font_open_folder">Font Folder</string>
+    <string name="font_applied">Font applied: </string>
+    <string name="font_applied_default">Switched to system default font</string>
 </resources>
