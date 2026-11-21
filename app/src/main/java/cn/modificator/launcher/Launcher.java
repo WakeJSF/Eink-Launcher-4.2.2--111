@@ -1461,9 +1461,9 @@ public class Launcher extends AppCompatActivity
   }
 
   private void openSettingsFragment() {
-    // Android 4.2.2 使用旧版 Fragment API
-    android.app.FragmentManager fm = getFragmentManager();
-    android.app.FragmentTransaction ft = fm.beginTransaction();
+    // 使用 androidx Fragment（与 SettingFragment 的继承保持一致）
+    androidx.fragment.app.FragmentManager fm = getSupportFragmentManager();
+    androidx.fragment.app.FragmentTransaction ft = fm.beginTransaction();
     ft.replace(android.R.id.content, new SettingFragment());
     ft.addToBackStack(null);
     ft.commit();
