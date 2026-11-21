@@ -129,7 +129,7 @@ public class FTPService extends Service {
     builder
         .setContentTitle("Eink Launcher")
         .setContentText("FTP服务暂不可用")
-        .setSmallIcon(R.drawable.ic_launcher)
+        .setSmallIcon(android.R.drawable.ic_dialog_info)
         .setOngoing(true);
 
     Notification notification = builder.build();
