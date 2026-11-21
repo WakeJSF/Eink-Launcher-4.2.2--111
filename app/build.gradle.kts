@@ -34,6 +34,11 @@ android {
     buildFeatures {
         buildConfig = true
     }
+    lint {
+        // 禁用 targetSdk 检查，因为我们针对的是 Android 4.2.2
+        checkReleaseBuilds = false
+        abortOnError = false
+    }
     sourceSets {
         getByName("main") {
             jniLibs.srcDirs("libs")
