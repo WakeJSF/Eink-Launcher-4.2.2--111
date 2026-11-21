@@ -12,8 +12,8 @@ android {
         targetSdk = 17  // Android 4.2.2 - 运行时行为保持不变
         versionCode = 52
         versionName = "4.1.1-42compat"
-        // 移除 multiDex，Android 4.2.2 不需要
-        // multiDexEnabled = true
+        // 启用 multidex 支持旧版本 Android
+        multiDexEnabled = true
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -26,9 +26,10 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_7  // 使用 Java 7，兼容性更好
-        targetCompatibility = JavaVersion.VERSION_1_7
-        // 移除 coreLibraryDesugaring，Android 4.2.2 不支持
+        // 启用 Java 8 特性支持（需要 desugaring）
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+        coreLibraryDesugaringEnabled = true  // 启用 desugaring
     }
     buildFeatures {
         buildConfig = true
@@ -75,14 +76,14 @@ configurations.all {
 }
 
 dependencies {
-    // 移除 coreLibraryDesugaring
-    // coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+    // 启用 desugaring，支持 Java 8 特性在旧版 Android 上运行
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 
     // 使用兼容 Android 4.2.2 (API 17) 的旧版本
     implementation(libs.androidx.core.ktx)  // core 1.6.0
     implementation(libs.androidx.appcompat)  // appcompat 1.4.1
-    // 移除 multidex
-    // implementation("androidx.multidex:multidex:2.0.1")
+    // 启用 multidex 支持
+    implementation("androidx.multidex:multidex:2.0.1")
 
     implementation("org.apache.ftpserver:ftplet-api:1.2.1")
     implementation("org.apache.ftpserver:ftpserver-core:1.2.1")
