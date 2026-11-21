@@ -207,7 +207,8 @@ public class SettingActivity extends Activity implements View.OnClickListener {
 
   private void makeFocusable(View view) {
     view.setFocusable(true);
-    view.setFocusableInTouchMode(false);
+    // 允许触摸模式，确保点击响应
+    view.setFocusableInTouchMode(true);
     if (!(view instanceof Spinner) && !(view instanceof SeekBar)) {
       view.setBackgroundResource(R.drawable.setting_item_focus);
     }
