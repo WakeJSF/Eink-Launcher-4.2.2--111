@@ -14,8 +14,11 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.TextView;
+import android.graphics.Typeface;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import cn.modificator.launcher.model.FontManager;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -28,6 +31,8 @@ public class ClockActivity extends AppCompatActivity {
 
   private TextView tvTime;
   private TextView tvDate;
+  private Typeface defaultTimeTypeface;
+  private Typeface defaultDateTypeface;
   private Config config;
   private final Handler timeHandler = new Handler(Looper.getMainLooper());
 
@@ -51,6 +56,11 @@ public class ClockActivity extends AppCompatActivity {
     tvTime = findViewById(R.id.tv_time);
     tvDate = findViewById(R.id.tv_date);
 
+    // 记录原始字体，供"系统默认"选项恢复
+    defaultTimeTypeface = tvTime.getTypeface();
+    defaultDateTypeface = tvDate.getTypeface();
+    applyCustomFont();
+
     tvTime.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
@@ -71,7 +81,17 @@ public class ClockActivity extends AppCompatActivity {
   protected void onResume() {
     super.onResume();
     setFullscreen();
+    applyCustomFont();
     startTicker();
+  }
+
+  /** 将自定义字体应用到全屏时钟（大时间 + 日期），失败时恢复各自原始字体 */
+  private void applyCustomFont() {
+    if (config == null || tvTime == null || tvDate == null) return;
+    String fontName = config.getCustomFont();
+    Typeface typeface = new FontManager().loadFont(fontName);
+    tvTime.setTypeface(typeface != null ? typeface : defaultTimeTypeface);
+    tvDate.setTypeface(typeface != null ? typeface : defaultDateTypeface);
   }
 
   @Override

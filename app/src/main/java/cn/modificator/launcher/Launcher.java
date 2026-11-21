@@ -95,6 +95,9 @@ public class Launcher extends AppCompatActivity
   private boolean isChina = true;
   private IconCache iconCache;
   private FontManager fontManager;
+  /** 顶部大时钟各 TextView 的原始字体（用于"系统默认"恢复） */
+  private Typeface defaultLargeClockTimeTypeface;
+  private Typeface defaultLargeClockDateTypeface;
   private LauncherAdapter adapter;
   private AppItemBinder binder;
   private boolean isSystemApp = false;
@@ -448,6 +451,9 @@ public class Launcher extends AppCompatActivity
     largeClockContainer = findViewById(R.id.largeClockContainer);
     largeClockTime = findViewById(R.id.largeClockTime);
     largeClockDate = findViewById(R.id.largeClockDate);
+    // 记录原始字体，供"系统默认"选项恢复（必须在 applyCustomFont 之前）
+    defaultLargeClockTimeTypeface = largeClockTime.getTypeface();
+    defaultLargeClockDateTypeface = largeClockDate.getTypeface();
     textClock.setBackgroundResource(R.drawable.footer_item_focus);
     textClock.setClickable(true);
     View.OnClickListener clockClickListener = new View.OnClickListener() {
@@ -597,12 +603,29 @@ public class Launcher extends AppCompatActivity
     adapter.setFontSize(size);
   }
 
-  /** 应用桌面自定义字体：从 Config 读取字体文件名并加载，失败降级为系统默认 */
+  /** 应用桌面自定义字体：从 Config 读取字体文件名并加载，失败降级为各自原始字体 */
   private void applyCustomFont() {
-    if (adapter == null || fontManager == null || config == null) return;
+    if (fontManager == null || config == null) return;
     String fontName = config.getCustomFont();
     Typeface typeface = fontManager.loadFont(fontName);
-    adapter.setAppNameTypeface(typeface);
+
+    // App 名称
+    if (adapter != null) {
+      adapter.setAppNameTypeface(typeface);
+    }
+    // 顶部大时钟（大时间 + 年月日星期）：有自定义字体就用它，否则恢复各自的原始字体
+    Typeface timeFont = typeface != null ? typeface : defaultLargeClockTimeTypeface;
+    Typeface dateFont = typeface != null ? typeface : defaultLargeClockDateTypeface;
+    if (largeClockTime != null) {
+      largeClockTime.setTypeface(timeFont);
+    }
+    if (largeClockDate != null) {
+      largeClockDate.setTypeface(dateFont);
+    }
+    // 字号需要按新字体重新测量，否则大字体可能溢出
+    if (largeClockContainer != null && largeClockTime != null) {
+      updateLargeClockTextSize();
+    }
   }
 
   @Override
