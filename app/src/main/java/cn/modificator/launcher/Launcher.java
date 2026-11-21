@@ -1461,7 +1461,9 @@ public class Launcher extends AppCompatActivity
   }
 
   private void openSettingsFragment() {
-    startActivity(new Intent(this, SettingActivity.class));
+    Intent intent = new Intent(this, SettingActivity.class);
+    intent.putExtra("listener", this);
+    startActivity(intent);
   }
 
   private void openClockActivity() {

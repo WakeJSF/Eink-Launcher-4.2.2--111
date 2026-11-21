@@ -49,6 +49,7 @@ public class SettingActivity extends Activity implements View.OnClickListener {
   private static final String TAG = "SettingActivity";
   private static final int REQUEST_PICK_WALLPAPER = 10003;
   private static final int REQUEST_FTP_STORAGE_PERMISSION = 10004;
+  private static final String EXTRA_LISTENER = "listener";
   private static final Handler MAIN_HANDLER = new Handler(Looper.getMainLooper());
   private static final ExecutorService WALLPAPER_EXECUTOR =
       Executors.newSingleThreadExecutor(new ThreadFactory() {
@@ -58,25 +59,7 @@ public class SettingActivity extends Activity implements View.OnClickListener {
         }
       });
 
-  /** 设置变更回调接口：宿主 Activity 应实现此接口以响应设置变更。 */
-  public interface OnSettingChangeListener {
-    void onRowNumChanged(int rowNum);
-    void onColNumChanged(int colNum);
-    void onFontSizeChanged(float size);
-    void onAppNameLinesChanged(int lines);
-    void onHideDividerChanged(boolean hide);
-    void onShowStatusBarChanged(boolean show);
-    void onShowCustomIconChanged(boolean show);
-    void onClockShowSecondsChanged(boolean show);
-    void onShowLargeClockChanged(boolean show);
-    void onBottomAlignIconsChanged(boolean align);
-    void onSortModeChanged(int mode);
-    void onThemeModeChanged(int mode);
-    void onScreenOrientationChanged(int mode);
-    void onEnterManageMode();
-  }
-
-  private OnSettingChangeListener listener;
+  private SettingFragment.OnSettingChangeListener listener;
 
   private Spinner colNumSpinner;
   private Spinner rowNumSpinner;
@@ -110,6 +93,13 @@ public class SettingActivity extends Activity implements View.OnClickListener {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_setting);
     config = new Config(this);
+    
+    // 从 Intent 获取 listener
+    Object extra = getIntent().getExtras() != null ? getIntent().getExtras().get(EXTRA_LISTENER) : null;
+    if (extra instanceof SettingFragment.OnSettingChangeListener) {
+      listener = (SettingFragment.OnSettingChangeListener) extra;
+    }
+    
     initViews();
     initSpinners();
     initFontControl();
