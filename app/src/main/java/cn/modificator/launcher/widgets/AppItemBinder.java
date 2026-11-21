@@ -359,14 +359,6 @@ public class AppItemBinder {
       }
     }
   }
-    if (bitmap != null) {
-      Drawable drawable = new BitmapDrawable(view.getResources(), bitmap);
-      if (iconCache != null) iconCache.putIcon(customCacheKey, drawable);
-      view.setImageDrawable(drawable);
-    } else {
-      view.setImageURI(Uri.fromFile(file));
-    }
-  }
 
   /**
    * 优雅关闭线程池
