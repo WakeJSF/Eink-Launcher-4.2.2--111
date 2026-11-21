@@ -1461,10 +1461,12 @@ public class Launcher extends AppCompatActivity
   }
 
   private void openSettingsFragment() {
-    getFragmentManager().beginTransaction()
-        .replace(android.R.id.content, new SettingFragment())
-        .addToBackStack(null)
-        .commit();
+    // Android 4.2.2 使用旧版 Fragment API
+    android.app.FragmentManager fm = getFragmentManager();
+    android.app.FragmentTransaction ft = fm.beginTransaction();
+    ft.replace(android.R.id.content, new SettingFragment());
+    ft.addToBackStack(null);
+    ft.commit();
   }
 
   private void openClockActivity() {

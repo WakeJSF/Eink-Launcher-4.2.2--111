@@ -91,12 +91,8 @@ public class Utils {
    */
   public static void registerReceiverCompat(Context context, BroadcastReceiver receiver,
                                              IntentFilter filter) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-      context.registerReceiver(receiver, filter, Context.RECEIVER_EXPORTED);
-    } else {
-      // Android 4.2.2 及更低版本使用旧版 API
-      context.registerReceiver(receiver, filter);
-    }
+    // Android 4.2.2 不支持 RECEIVER_EXPORTED，使用旧版 API
+    context.registerReceiver(receiver, filter);
   }
 
   /**

@@ -270,12 +270,8 @@ public class FTPService extends Service implements Runnable {
         .setContentText("网络传书已开启")
         .setOngoing(true)
         .build();
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-      ServiceCompat.startForeground(this, NOTIFICATION_ID, notification,
-          ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
-    } else {
-      startForeground(NOTIFICATION_ID, notification);
-    }
+    // Android 4.2.2 不支持 ForegroundServiceType，使用简单方式
+    startForeground(NOTIFICATION_ID, notification);
   }
 
   private void stopForegroundCompat() {
