@@ -45,6 +45,23 @@ configurations.all {
         // MINA 2.1.6+ calls ServerSocketChannel.supportedOptions(), which is
         // unavailable on old Android releases this launcher still supports.
         force("org.apache.mina:mina-core:2.1.3")
+
+        // 强制所有依赖使用兼容 Android 4.2.2 (API 17) 的版本
+        // 防止传递依赖引入高版本库
+        force("androidx.core:core:1.6.0")
+        force("androidx.appcompat:appcompat:1.4.1")
+        force("androidx.appcompat:appcompat-resources:1.4.1")
+        force("androidx.lifecycle:lifecycle-runtime:2.4.0")
+        force("androidx.lifecycle:lifecycle-process:2.4.0")
+        force("androidx.lifecycle:lifecycle-viewmodel:2.4.0")
+        force("androidx.annotation:annotation:1.3.0")
+        force("androidx.annotation:annotation-experimental:1.1.0")
+        force("androidx.emoji2:emoji2:1.1.0")
+        force("androidx.emoji2:emoji2-views-helper:1.1.0")
+        force("androidx.collection:collection:1.1.0")
+        force("androidx.concurrent:concurrent-futures:1.1.0")
+        force("androidx.arch.core:core-common:2.1.0")
+        force("androidx.arch.core:core-runtime:2.1.0")
     }
 }
 
