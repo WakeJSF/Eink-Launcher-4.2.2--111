@@ -275,77 +275,71 @@ private void notifySettingsChanged() {
 
 ---
 
-## 五、当前存在的问题
+## 五、问题定位与修复记录
 
-### 5.1 已知问题
+### 5.1 已修复：设置页面黑屏 + 点击无响应（根本原因）
 
-#### 问题 1: 设置页面黑屏
-**现象**: 打开设置页面后，大部分区域变黑，但不会崩溃
+**现象**: 打开设置页面后大部分区域变黑，设置项点击无反应，但不崩溃
 
-**可能原因**:
-1. E-Ink 屏幕刷新机制与 Activity 生命周期冲突
-2. 布局渲染问题（FrameLayout 背景透明）
-3. 视图树初始化时序问题
+**根本原因（三重）**:
 
-**待解决方向**:
-- 检查 `activity_setting.xml` 布局文件的可见性
-- 考虑使用 Fragment 替代 Activity
-- 添加延迟初始化逻辑
+1. **缺少 E-Ink 屏幕刷新标记（最关键）**
+   - Manifest 中 `Launcher`、`ClockActivity`、`CrashDetailPage` 都声明了
+     `<meta-data android:name="com.yotadevices.keep_on_epd_screen" android:value="true"/>`
+   - 但 `SettingActivity` 没有此标记 → 窗口不会刷新到电子纸屏幕 → 黑屏
 
----
+2. **Activity 类型与主题不匹配**
+   - `SettingActivity extends android.app.Activity`
+   - 但全局 `AppTheme` 父主题是 `Theme.AppCompat.DayNight.NoActionBar`
+   - AppCompat 主题要求宿主必须继承 `AppCompatActivity`，否则 Decor View 构建和事件分发异常
 
-#### 问题 2: 点击无响应
-**现象**: 设置项点击后没有视觉反馈
+3. **透明窗口背景**
+   - `activity_setting.xml` 根布局背景被注释掉，主题 `windowBackground=transparent`
+   - 原 Fragment 方案下透明区域能看到桌面；独立 Activity 下无内容渲染为黑
 
-**可能原因**:
-1. E-Ink 屏幕刷新延迟导致用户感知不到点击
-2. Focus 管理问题（D-pad 焦点 vs 触摸焦点）
-3. 事件分发被拦截
+4. **附加问题：FragmentManager API 不匹配**
+   - Launcher 用 `getFragmentManager()`（旧 API）检查回退栈
+   - SettingFragment 是 androidx Fragment，导致回退栈计数永远为 0 → 设置页关不掉
 
-**待解决方向**:
-- 添加点击反馈动画（即使 E-Ink 设备也需要视觉提示）
-- 检查事件分发链
-- 考虑禁用 focus 管理，改用直接点击
+**最终解决方案（commit 635b30c）**: 回退到 Fragment 架构
+- `launcher_activity.xml`: 根布局改为 FrameLayout，添加 `settingContainer` 覆盖层
+- `Launcher.openSettingsFragment()`: 用 `getSupportFragmentManager().commitNow()` 将
+  SettingFragment 添加到容器（同步提交，避免时序问题）
+- 新增 `closeSettingsFragment()` 和 `isSettingsFragmentShown()`（基于容器可见性判断）
+- `onBackPressed()` / `handleLauncherKeyDown()` / `handleLauncherKeyUp()` 统一改用
+  `getSupportFragmentManager()` 并优先关闭设置页
+- `SettingFragment.handleToggleLargeClock()`: 移除错误的 `getFragmentManager().popBackStackImmediate()`
+- `SettingFragment`: 所有 `getActivity().onBackPressed()` 改为 `closeSettings()` 辅助方法
 
----
-
-#### 问题 3: 自定义图标功能
-**现象**: 点击"显示自定义图标"选项无反应
-
-**原因**: 权限检查或图标缓存刷新逻辑可能有问题
-
-**待解决方向**:
-- 检查 `Utils.checkStoragePermission()` 实现
-- 验证图标缓存刷新逻辑
+**架构优势**:
+- 设置页覆盖在 Launcher 之上，共享窗口 → 自动继承 EPD 标记和正确主题
+- listener 通过 `onAttach()` 直接获取（`SettingFragment.OnSettingChangeListener`）→ 实时生效，无需广播
+- 透明背景能看到下面的桌面，符合原设计意图
 
 ---
 
-### 5.2 架构问题
+### 5.2 已修复：编译错误（历史）
 
-#### 问题 4: Activity vs Fragment
-**现状**: 将 SettingFragment 转换为 SettingActivity
-
-**问题**:
-- Activity 切换有生命周期开销
-- 无法直接访问宿主 Activity 的私有成员
-- 通信需要通过广播或接口
-
-**建议**:
-- 考虑保留 Fragment 架构
-- 或使用 ViewModel + LiveData 进行通信
+| 错误 | 原因 | 解决方案 |
+|------|------|----------|
+| AAR 元数据版本 32 | compileSdk=17 过低 | 提升 compileSdk 到 31，保持 minSdk=14/targetSdk=17 |
+| Compose 插件未找到 | Kotlin 1.7.21 无此插件 | 移除 compose 插件声明 |
+| 库引用名不匹配 | version catalog 命名错误 | 修正为 libs.androidx.appcompat |
+| META-INF 重复 | 多依赖库冲突 | packagingOptions 排除重复文件 |
+| findViewBy 拼写错误 | 方法名错误 | 批量替换为 findViewById |
+| config.load() 不存在 | Config 无此方法 | 直接使用 getter（构造函数已加载） |
+| Intent 传 Listener | 接口非 Parcelable | 改用 Fragment onAttach 回调机制 |
 
 ---
 
-#### 问题 5: 广播通信开销
-**现状**: 使用广播通知设置变更
+### 5.3 待观察：自定义图标功能
 
-**问题**:
-- 每次设置变更都会发送广播
-- 广播接收器在主线程执行可能阻塞 UI
+**现象**: 早期版本点击"显示自定义图标"选项无反应
 
-**建议**:
-- 使用 Handler 延迟执行
-- 或考虑使用 LocalBroadcastManager
+**当前状态**: 回退 Fragment 架构后，listener 回调链路已恢复（`onShowCustomIconChanged` →
+`iconCache.markDirty()` + `refreshIcons()`）。理论上应已修复，需在真机验证
+
+**验证方法**: 检查 `Utils.checkStoragePermission()` 是否正确回调 Runnable
 
 ---
 
@@ -446,10 +440,12 @@ jobs:
 | 版本 | 日期 | 主要变更 |
 |------|------|----------|
 | 4.1.1-42compat | 2026-11-21 | 初始 Android 4.2.2 适配 |
-| - | 2026-11-21 | 修复编译错误 |
-| - | 2026-11-21 | 修复触摸模式问题 |
-| - | 2026-11-21 | 添加广播通信机制 |
-| - | 2026-11-21 | 添加 listener null check |
+| - | 2026-11-21 | 修复编译错误（AAR/compose/库引用/META-INF/findViewBy） |
+| - | 2026-11-21 | 尝试 SettingActivity 独立 Activity 方案（失败） |
+| - | 2026-11-21 | 添加广播通信机制和 listener null check |
+| **635b30c** | **2026-11-21** | **回退 Fragment 架构，根治黑屏和点击无响应问题** |
+
+**当前稳定版本**: commit 635b30c（GitHub Actions Run #27 构建成功）
 
 ---
 
