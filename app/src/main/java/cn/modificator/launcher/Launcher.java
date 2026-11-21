@@ -133,6 +133,31 @@ public class Launcher extends AppCompatActivity
   private boolean timeRegistered;
   private boolean usbRegistered;
   private boolean ftpRegistered;
+  private boolean settingsChangedRegistered;
+
+  private final BroadcastReceiver settingsChangedReceiver = new BroadcastReceiver() {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+      // 重新加载配置并刷新UI
+      if (config != null) {
+        config.load();
+        applyGridSize(config.getColNum(), config.getRowNum());
+        if (adapter != null) {
+          adapter.setFontSize(config.getFontSize());
+          adapter.setAppNameLines(config.getAppNameLines());
+        }
+        if (launcherView != null) {
+          launcherView.setHideDivider(config.isHideDivider());
+          launcherView.setBottomAlignIcons(config.isBottomAlignIcons());
+        }
+        applyStatusBarVisibility();
+        if (binder != null) {
+          binder.setDelete(config.isShowCustomIcon());
+        }
+        updateClockRefreshMode();
+      }
+    }
+  };
 
   private final BroadcastReceiver timeReceiver = new BroadcastReceiver() {
     @Override
@@ -543,6 +568,9 @@ public class Launcher extends AppCompatActivity
   // =========================================================================
   // SettingFragment.OnSettingChangeListener 实现
   // =========================================================================
+  
+  /** 广播动作：设置已更改，需要刷新UI */
+  public static final String ACTION_SETTINGS_CHANGED = "cn.modificator.launcher.ACTION_SETTINGS_CHANGED";
 
   @Override
   public void onRowNumChanged(int rowNum) {
@@ -1129,6 +1157,11 @@ public class Launcher extends AppCompatActivity
       registerCompatReceiver(batteryReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
       batteryRegistered = true;
     }
+    if (!settingsChangedRegistered) {
+      IntentFilter settingsFilter = new IntentFilter(ACTION_SETTINGS_CHANGED);
+      registerCompatReceiver(settingsChangedReceiver, settingsFilter);
+      settingsChangedRegistered = true;
+    }
     updateClockRefreshMode();
     if (!usbRegistered) {
       registerUsbReceiver();
@@ -1145,6 +1178,10 @@ public class Launcher extends AppCompatActivity
     if (batteryRegistered) {
       unregisterReceiver(batteryReceiver);
       batteryRegistered = false;
+    }
+    if (settingsChangedRegistered) {
+      unregisterReceiver(settingsChangedReceiver);
+      settingsChangedRegistered = false;
     }
     if (timeRegistered) {
       unregisterReceiver(timeReceiver);
@@ -1462,7 +1499,9 @@ public class Launcher extends AppCompatActivity
 
   private void openSettingsFragment() {
     Intent intent = new Intent(this, SettingActivity.class);
-    intent.putExtra("listener", this);
+    Bundle bundle = new Bundle();
+    // 注意：由于 Listener 接口不是 Parcelable，不能直接传递
+    // SettingActivity 将通过其他方式获取 listener（如静态注册或广播）
     startActivity(intent);
   }
 

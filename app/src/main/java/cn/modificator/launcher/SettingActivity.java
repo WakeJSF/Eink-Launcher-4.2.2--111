@@ -222,6 +222,8 @@ public class SettingActivity extends Activity implements View.OnClickListener {
         int rowNum = position + 1;
         config.setRowNum(rowNum);
         listener.onRowNumChanged(rowNum);
+        notifySettingsChanged();
+        notifySettingsChanged();
       }
 
       @Override
@@ -236,6 +238,7 @@ public class SettingActivity extends Activity implements View.OnClickListener {
         int colNum = position + 1;
         config.setColNum(colNum);
         listener.onColNumChanged(colNum);
+        notifySettingsChanged();
       }
 
       @Override
@@ -250,6 +253,7 @@ public class SettingActivity extends Activity implements View.OnClickListener {
         int lines = (position == 3) ? Integer.MAX_VALUE : position;
         config.setAppNameLines(lines);
         listener.onAppNameLinesChanged(lines);
+        notifySettingsChanged();
       }
 
       @Override
@@ -272,6 +276,7 @@ public class SettingActivity extends Activity implements View.OnClickListener {
         }
         config.setSortMode(position);
         listener.onSortModeChanged(position);
+        notifySettingsChanged();
       }
 
       @Override
@@ -288,6 +293,7 @@ public class SettingActivity extends Activity implements View.OnClickListener {
         }
         config.setScreenOrientation(position);
         listener.onScreenOrientationChanged(position);
+        notifySettingsChanged();
       }
 
       @Override
@@ -304,6 +310,7 @@ public class SettingActivity extends Activity implements View.OnClickListener {
         }
         config.setThemeMode(position);
         listener.onThemeModeChanged(position);
+        notifySettingsChanged();
       }
 
       @Override
@@ -320,6 +327,7 @@ public class SettingActivity extends Activity implements View.OnClickListener {
           float newSize = 10 + progress / 10f;
           config.setFontSize(newSize);
           listener.onFontSizeChanged(newSize);
+          notifySettingsChanged();
         }
       }
 
@@ -394,6 +402,7 @@ public class SettingActivity extends Activity implements View.OnClickListener {
     boolean newValue = !config.isShowStatusBar();
     config.setShowStatusBar(newValue);
     listener.onShowStatusBarChanged(newValue);
+    notifySettingsChanged();
     finish();
   }
 
@@ -402,6 +411,7 @@ public class SettingActivity extends Activity implements View.OnClickListener {
     config.setHideDivider(newValue);
     hideDivider.setText(newValue ? "显示分隔线" : "隐藏分隔线");
     listener.onHideDividerChanged(newValue);
+    notifySettingsChanged();
     finish();
   }
 
@@ -477,6 +487,7 @@ public class SettingActivity extends Activity implements View.OnClickListener {
         boolean newValue = !config.isShowCustomIcon();
         config.setShowCustomIcon(newValue);
         listener.onShowCustomIconChanged(newValue);
+        notifySettingsChanged();
         SettingActivity.this.finish();
       }
     });
@@ -487,6 +498,7 @@ public class SettingActivity extends Activity implements View.OnClickListener {
     config.setClockShowSeconds(newValue);
     updateClockShowSecondsState();
     listener.onClockShowSecondsChanged(newValue);
+    notifySettingsChanged();
   }
 
   private void updateClockShowSecondsState() {
@@ -498,8 +510,8 @@ public class SettingActivity extends Activity implements View.OnClickListener {
     config.setShowLargeClock(show);
     showLargeClock.getPaint().setStrikeThruText(!show);
     Activity activity = this;
-    OnSettingChangeListener settingListener = listener;
-    if (activity != null) {
+    SettingFragment.OnSettingChangeListener settingListener = listener;
+    if (activity != null && settingListener != null) {
       activity.getFragmentManager().popBackStackImmediate();
       settingListener.onShowLargeClockChanged(show);
     }
@@ -510,6 +522,7 @@ public class SettingActivity extends Activity implements View.OnClickListener {
     config.setBottomAlignIcons(align);
     bottomAlignIcons.getPaint().setStrikeThruText(!align);
     listener.onBottomAlignIconsChanged(align);
+    notifySettingsChanged();
   }
 
   private void handleToggleStartAtBoot() {
@@ -681,6 +694,13 @@ public class SettingActivity extends Activity implements View.OnClickListener {
     ftpFilter.addAction(FTPService.ACTION_STOPPED);
     ftpFilter.addAction(FTPService.ACTION_FAILEDTOSTART);
     Utils.registerReceiverCompat(this, ftpReceiver, ftpFilter);
+  }
+
+  /** 发送广播通知 Launcher 刷新UI */
+  private void notifySettingsChanged() {
+    Intent intent = new Intent(Launcher.ACTION_SETTINGS_CHANGED);
+    intent.setPackage(getPackageName());
+    sendBroadcast(intent);
   }
 
   @Override
