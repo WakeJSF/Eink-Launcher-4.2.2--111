@@ -53,10 +53,8 @@ dependencies {
     // coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 
     // 使用兼容 Android 4.2.2 (API 17) 的旧版本
-    // androidx.core 1.6.0 是最后一个支持 API 14+ 的版本
-    implementation("androidx.core:core:1.6.0")
-    // appcompat 1.4.1 支持到 API 8+
-    implementation("androidx.appcompat:appcompat:1.4.1")
+    implementation(libs.androidx.core.ktx)  // core 1.6.0
+    implementation(libs.appcompat)  // appcompat 1.4.1
     // 移除 multidex
     // implementation("androidx.multidex:multidex:2.0.1")
 

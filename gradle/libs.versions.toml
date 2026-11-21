@@ -1,24 +1,26 @@
 [versions]
-agp = "8.7.3"
-coreSplashscreen = "1.0.1"
-kotlin = "2.2.0"
-coreKtx = "1.16.0"
+agp = "7.4.2"  # 降低 AGP 版本，兼容旧版 Android SDK
+coreSplashscreen = "1.0.0"
+kotlin = "1.7.21"  # 使用较老的 Kotlin 版本
+coreKtx = "1.6.0"  # 最后支持 API 14+ 的版本
 junit = "4.13.2"
-junitVersion = "1.2.1"
-espressoCore = "3.6.1"
-lifecycleRuntimeKtx = "2.9.2"
-activityCompose = "1.10.1"
-composeBom = "2025.07.00"
-materialIconsCore = "1.7.8"
-uiTextGoogleFonts = "1.8.3"
+junitVersion = "1.1.5"
+espressoCore = "3.5.1"
+lifecycleRuntimeKtx = "2.4.0"  # 使用支持老版本的 lifecycle
+activityCompose = "1.4.0"
+composeBom = "2022.10.00"
+materialIconsCore = "1.2.1"
+uiTextGoogleFonts = "1.2.1"
 navigation3 = "1.0.0-alpha05"
-kotlinxSerializationCore = "1.9.0"
-kotlinSerialization = "2.2.0"
-runtime = "1.8.3"
+kotlinxSerializationCore = "1.4.1"
+kotlinSerialization = "1.7.21"
+runtime = "1.2.1"
+appcompat = "1.4.1"  # 添加 appcompat 版本
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "coreSplashscreen" }
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
