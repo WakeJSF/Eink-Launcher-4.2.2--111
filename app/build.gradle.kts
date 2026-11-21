@@ -40,12 +40,12 @@ android {
     }
     packagingOptions {
         // 解决重复的 META-INF 文件问题
-        exclude('META-INF/DEPENDENCIES')
-        exclude('META-INF/LICENSE')
-        exclude('META-INF/LICENSE.txt')
-        exclude('META-INF/NOTICE')
-        exclude('META-INF/NOTICE.txt')
-        exclude('META-INF/services/javax.annotation.processing.Processor')
+        exclude("META-INF/DEPENDENCIES")
+        exclude("META-INF/LICENSE")
+        exclude("META-INF/LICENSE.txt")
+        exclude("META-INF/NOTICE")
+        exclude("META-INF/NOTICE.txt")
+        exclude("META-INF/services/javax.annotation.processing.Processor")
     }
 }
 
