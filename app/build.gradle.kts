@@ -29,7 +29,7 @@ android {
         // 启用 Java 8 特性支持（需要 desugaring）
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
-        coreLibraryDesugaringEnabled = true  // 启用 desugaring
+        // coreLibraryDesugaringEnabled 在 AGP 7.x 中默认启用，无需设置
     }
     buildFeatures {
         buildConfig = true
