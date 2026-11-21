@@ -85,6 +85,9 @@ dependencies {
     // 启用 multidex 支持
     implementation("androidx.multidex:multidex:2.0.1")
 
-    implementation("org.apache.ftpserver:ftplet-api:1.2.1")
-    implementation("org.apache.ftpserver:ftpserver-core:1.2.1")
+    // FTP 服务器库 - 使用 Android 兼容版本
+    // 注意：标准 Apache FTPServer 库不兼容 Android，需要使用 Android 适配版本
+    // 暂时注释掉，如果需要 FTP 功能，请使用 android-cupboard 或其他 Android 库
+    // implementation("org.apache.ftpserver:ftplet-api:1.2.1")
+    // implementation("org.apache.ftpserver:ftpserver-core:1.2.1")
 }
