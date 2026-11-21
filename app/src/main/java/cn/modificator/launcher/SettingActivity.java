@@ -122,35 +122,35 @@ public class SettingActivity extends Activity implements View.OnClickListener {
 
   private void initViews() {
     View toBack = findViewById(R.id.toBack);
-    View btnHideFontControl = findViewBy(R.id.btnHideFontControl);
+    View btnHideFontControl = findViewById(R.id.btnHideFontControl);
 
     toBack.setOnClickListener(this);
     findViewById(R.id.rootView).setOnClickListener(this);
     btnHideFontControl.setOnClickListener(this);
 
-    showStatusBar = findViewBy(R.id.showStatusBar);
-    showCustomIcon = findViewBy(R.id.showCustomIcon);
-    clockShowSeconds = findViewBy(R.id.clockShowSeconds);
-    showLargeClock = findViewBy(R.id.showLargeClock);
-    bottomAlignIcons = findViewBy(R.id.bottomAlignIcons);
-    startAtBoot = findViewBy(R.id.startAtBoot);
-    showWifiName = findViewBy(R.id.showWifiName);
-    ftpStatus = findViewBy(R.id.ftp_status);
-    ftpAddr = findViewBy(R.id.ftp_addr);
-    hideDivider = findViewBy(R.id.hideDivider);
-    fontControl = findViewBy(R.id.font_control);
-    colNumSpinner = findViewBy(R.id.col_num_spinner);
-    rowNumSpinner = findViewBy(R.id.row_num_spinner);
-    appNameLinesSpinner = findViewBy(R.id.appNameLine);
-    sortModeSpinner = findViewBy(R.id.sortModeSpinner);
-    themeModeSpinner = findViewBy(R.id.theme_mode_spinner);
-    screenOrientationSpinner = findViewBy(R.id.screen_orientation_spinner);
-    changeFontSize = findViewBy(R.id.changeFontSize);
-    deleteApp = findViewBy(R.id.deleteApp);
-    helpAbout = findViewBy(R.id.helpAbout);
-    menuFtp = findViewBy(R.id.menu_ftp);
-    openDeviceManager = findViewBy(R.id.openDeviceManager);
-    setWallpaper = findViewBy(R.id.setWallpaper);
+    showStatusBar = findViewById(R.id.showStatusBar);
+    showCustomIcon = findViewById(R.id.showCustomIcon);
+    clockShowSeconds = findViewById(R.id.clockShowSeconds);
+    showLargeClock = findViewById(R.id.showLargeClock);
+    bottomAlignIcons = findViewById(R.id.bottomAlignIcons);
+    startAtBoot = findViewById(R.id.startAtBoot);
+    showWifiName = findViewById(R.id.showWifiName);
+    ftpStatus = findViewById(R.id.ftp_status);
+    ftpAddr = findViewById(R.id.ftp_addr);
+    hideDivider = findViewById(R.id.hideDivider);
+    fontControl = findViewById(R.id.font_control);
+    colNumSpinner = findViewById(R.id.col_num_spinner);
+    rowNumSpinner = findViewById(R.id.row_num_spinner);
+    appNameLinesSpinner = findViewById(R.id.appNameLine);
+    sortModeSpinner = findViewById(R.id.sortModeSpinner);
+    themeModeSpinner = findViewById(R.id.theme_mode_spinner);
+    screenOrientationSpinner = findViewById(R.id.screen_orientation_spinner);
+    changeFontSize = findViewById(R.id.changeFontSize);
+    deleteApp = findViewById(R.id.deleteApp);
+    helpAbout = findViewById(R.id.helpAbout);
+    menuFtp = findViewById(R.id.menu_ftp);
+    openDeviceManager = findViewById(R.id.openDeviceManager);
+    setWallpaper = findViewById(R.id.setWallpaper);
 
     showStatusBar.setOnClickListener(this);
     hideDivider.setOnClickListener(this);
@@ -271,8 +271,8 @@ public class SettingActivity extends Activity implements View.OnClickListener {
       @Override
       public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
         if (AppSortComparator.modeNeedsUsageStats(position)
-            && !AppSortComparator.hasUsageStatsPermission(this)) {
-          Toast.makeText(this, R.string.sort_need_usage_permission, Toast.LENGTH_LONG).show();
+            && !AppSortComparator.hasUsageStatsPermission(SettingActivity.this)) {
+          Toast.makeText(SettingActivity.this, R.string.sort_need_usage_permission, Toast.LENGTH_LONG).show();
           if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             startActivity(new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS));
           }
@@ -355,7 +355,7 @@ public class SettingActivity extends Activity implements View.OnClickListener {
   public void onClick(View v) {
     int id = v.getId();
     if (id == R.id.toBack || id == R.id.rootView) {
-      this.onBackPressed();
+      finish();
     } else if (id == R.id.deleteApp) {
       handleDeleteApp();
     } else if (id == R.id.showStatusBar) {
@@ -363,12 +363,12 @@ public class SettingActivity extends Activity implements View.OnClickListener {
     } else if (id == R.id.helpAbout) {
       AboutDialog.getInstance(this).show();
     } else if (id == R.id.btnHideFontControl) {
-      findViewBy(R.id.menuList).setVisibility(View.VISIBLE);
-      findViewBy(R.id.font_control_p).setVisibility(View.GONE);
+      findViewById(R.id.menuList).setVisibility(View.VISIBLE);
+      findViewById(R.id.font_control_p).setVisibility(View.GONE);
       changeFontSize.requestFocus();
     } else if (id == R.id.changeFontSize) {
-      findViewBy(R.id.menuList).setVisibility(View.GONE);
-      findViewBy(R.id.font_control_p).setVisibility(View.VISIBLE);
+      findViewById(R.id.menuList).setVisibility(View.GONE);
+      findViewById(R.id.font_control_p).setVisibility(View.VISIBLE);
       fontControl.requestFocus();
     } else if (id == R.id.hideDivider) {
       handleToggleDivider();
@@ -396,14 +396,14 @@ public class SettingActivity extends Activity implements View.OnClickListener {
 
   private void handleDeleteApp() {
     listener.onEnterManageMode();
-    this.onBackPressed();
+    finish();
   }
 
   private void handleToggleStatusBar() {
     boolean newValue = !config.isShowStatusBar();
     config.setShowStatusBar(newValue);
     listener.onShowStatusBarChanged(newValue);
-    this.onBackPressed();
+    finish();
   }
 
   private void handleToggleDivider() {
@@ -411,7 +411,7 @@ public class SettingActivity extends Activity implements View.OnClickListener {
     config.setHideDivider(newValue);
     hideDivider.setText(newValue ? "显示分隔线" : "隐藏分隔线");
     listener.onHideDividerChanged(newValue);
-    this.onBackPressed();
+    finish();
   }
 
   private void handleFtp() {
@@ -480,13 +480,13 @@ public class SettingActivity extends Activity implements View.OnClickListener {
   }
 
   private void handleToggleCustomIcon() {
-    Utils.checkStoragePermission(this, new Runnable() {
+    Utils.checkStoragePermission(SettingActivity.this, new Runnable() {
       @Override
       public void run() {
         boolean newValue = !config.isShowCustomIcon();
         config.setShowCustomIcon(newValue);
         listener.onShowCustomIconChanged(newValue);
-        this.onBackPressed();
+        SettingActivity.this.finish();
       }
     });
   }
@@ -656,12 +656,12 @@ public class SettingActivity extends Activity implements View.OnClickListener {
     if (requestCode == REQUEST_FTP_STORAGE_PERMISSION) {
       if (hasFtpStorageAccess()) {
         startFtpServer();
-      } else if (this != null) {
-        Toast.makeText(this, "需要存储权限才能启动网络传书", Toast.LENGTH_SHORT).show();
+      } else {
+        Toast.makeText(SettingActivity.this, "需要存储权限才能启动网络传书", Toast.LENGTH_SHORT).show();
       }
     } else if (requestCode == 10002) {
       WifiControl.reloadWifiName();
-      this.onBackPressed();
+      finish();
     }
   }
 
@@ -676,8 +676,8 @@ public class SettingActivity extends Activity implements View.OnClickListener {
       waitingForFtpStorageAccess = false;
       if (hasFtpStorageAccess()) {
         startFtpServer();
-      } else if (this != null) {
-        Toast.makeText(this, "需要所有文件访问权限才能启动网络传书", Toast.LENGTH_SHORT).show();
+      } else {
+        Toast.makeText(SettingActivity.this, "需要所有文件访问权限才能启动网络传书", Toast.LENGTH_SHORT).show();
       }
     }
     updateFtpStatus();
@@ -773,7 +773,7 @@ public class SettingActivity extends Activity implements View.OnClickListener {
     @Override
     public void onReceive(Context context, Intent intent) {
       if (FTPService.ACTION_FAILEDTOSTART.equals(intent.getAction())) {
-        Toast.makeText(this, "网络传书启动失败", Toast.LENGTH_SHORT).show();
+        Toast.makeText(SettingActivity.this, "网络传书启动失败", Toast.LENGTH_SHORT).show();
       }
       updateFtpStatus();
     }
