@@ -138,9 +138,9 @@ public class Launcher extends AppCompatActivity
   private final BroadcastReceiver settingsChangedReceiver = new BroadcastReceiver() {
     @Override
     public void onReceive(Context context, Intent intent) {
-      // 重新加载配置并刷新UI
+      // 刷新UI以反映设置变更
       if (config != null) {
-        config.load();
+        // Config 已经在构造函数中加载，直接读取最新值
         applyGridSize(config.getColNum(), config.getRowNum());
         if (adapter != null) {
           adapter.setFontSize(config.getFontSize());
