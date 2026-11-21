@@ -4,12 +4,12 @@ plugins {
 
 android {
     namespace = "cn.modificator.launcher"
-    compileSdk = 17  // 适配 Android 4.2.2
+    compileSdk = 31  // 使用现代 AndroidX 库需要的最低版本
 
     defaultConfig {
         applicationId = "com.zyyme.einklauncher"
         minSdk = 14     // Android 4.0
-        targetSdk = 17  // Android 4.2.2
+        targetSdk = 17  // Android 4.2.2 - 运行时行为保持不变
         versionCode = 52
         versionName = "4.1.1-42compat"
         // 移除 multiDex，Android 4.2.2 不需要
