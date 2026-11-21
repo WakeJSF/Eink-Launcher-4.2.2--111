@@ -1,0 +1,115 @@
+<resources>
+    <string name="app_name">咩E-Ink Launcher</string>
+    <string name="file_manager">File Manager</string>
+    <string name="uninstall_tip" translatable="false">卸载将丢失所有的设置，\n请确保您已备份！\n\n遇到问题请到Github中提issues\nhttps://github.com/zanjie1999/E-Ink-Launcher\n\n或者到B站私信郑羊羊\n\n本程序为开源项目，如果你是花钱购买的，或是付费安装的，请申请退款并举报，禁止任何程度的商业用途，使用请遵守 咩License\n\n本条提示利用漏洞安全的实现，\n以提升用户体验</string>
+
+    <string name="empty_directory_hint">Empty directory</string>
+    <string name="start_path_name" translatable="false">Device</string>
+    <string name="type_archive">Archive</string>
+    <string name="type_certificate">Certificate</string>
+    <string name="type_directory">Directory</string>
+    <string name="type_document">File</string>
+    <string name="type_drawing">Picture</string>
+    <string name="type_excel">Spreadsheet</string>
+    <string name="type_image">Image</string>
+    <string name="type_music">Music</string>
+    <string name="type_video">Video</string>
+    <string name="type_pdf">PDF document</string>
+    <string name="type_power_point">Presentation</string>
+    <string name="type_word">Document</string>
+    <string name="type_apk">APK</string>
+
+    <string name="setting_cloud_manager_on">Cloud Manager - ON</string>
+    <string name="setting_cloud_manager_off">Cloud Manager - OFF</string>
+    <string name="setting_cloud_manager_wifi_off">Cloud Manager\n -- No WIFI connect</string>
+    <string name="battery_status_low_battery">Low power</string>
+    <string name="setting_show_divider">Show Divider</string>
+    <string name="setting_hide_divider">Hide Divider</string>
+    <string name="setting_set_font_size">Change Font Size</string>
+    <string name="setting_apps_manager">Apps Manager</string>
+    <string name="setting_open_device_manager">Open Device Manager</string>
+    <string name="setting_set_wallpaper">Set wallpaper</string>
+    <string name="wallpaper_target_title">Set wallpaper</string>
+    <string name="wallpaper_target_home">Home screen</string>
+    <string name="wallpaper_target_home_and_lock">Home and lock screens</string>
+    <string name="wallpaper_setting_success">Wallpaper set</string>
+    <string name="wallpaper_setting_failed">Unable to set wallpaper</string>
+    <string name="wallpaper_read_failed">Unable to read the selected image</string>
+    <string name="wallpaper_picker_unavailable">No file manager available</string>
+    <string name="wallpaper_not_supported">Wallpaper changes are not supported on this device</string>
+    <string name="wallpaper_not_allowed">Wallpaper changes are disabled on this device</string>
+    <string name="setting_column_icons">Column</string>
+    <string name="setting_row_icons">"   Row   "</string>
+    <string name="toast_need_wifi_connnect">Please connect Wlan!</string>
+    <string name="app_manager_finish">Done</string>
+    <string name="battery_heat">Battery Overheat</string>
+    <string name="battery_unknown">Unknown</string>
+    <string name="battery_charging">Charging</string>
+    <string name="battery_low">Low Battery</string>
+    <string name="battery_full">Full</string>
+    <string name="battery_wtf" translatable="false">WTF?</string>
+
+    <string name="dialog_cancel">Cancel</string>
+    <string name="dialog_app_info">App info</string>
+    <string name="dialog_copy_package_name">Copy package name %s</string>
+    <string name="package_name_copied">Package name copied</string>
+    <string name="dialog_hide">Hide</string>
+    <string name="dialog_uninstall">Uninstall</string>
+    <string name="dialog_pkg_name">Package Name: %s</string>
+    <string name="dialog_close">Close</string>
+
+    <string name="wifi_status_off">WiFi OFF</string>
+    <string name="wifi_status_closing">WiFi closing</string>
+    <string name="wifi_status_opening">WiFi opening</string>
+    <string name="wifi_status_on">WiFi ON</string>
+    <string name="wifi_status_connected">WiFi connected:%s</string>
+    <string name="wifi_status_connecting">WiFi connecting</string>
+    <string name="wifi_status_disconnected">WiFi disconnected</string>
+    <string name="wifi_status_disconnecting">WiFi disconnecting</string>
+
+    <string name="item_lockscreen">Lock Screen</string>
+    <string name="item_clear">Memory Clean</string>
+    <string name="launch_failed">Launch failed</string>
+    <string name="launch_devicemanager_failed">Please open Device Policy Manager and enable 咩E-Ink Launcher</string>
+    <string name="launch_devicemanager">Open Device Policy Manager</string>
+
+    <string-array name="power_menu">
+        <item>Power off</item>
+        <item>Reboot</item>
+    </string-array>
+    <string name="power_title" translatable="false">现在可以操作电源了哦~</string>
+    <string name="oh_no">混淆有毛用啊，文件这么少,代码渣貌似也能增加难度,不想加固，加固有问题，大哥我这就署名有价值，反编译别把我名字去了- -</string>
+    <string name="come_on">给点赏钱吧，支付鸨就行，账号是邮箱</string>
+    <string name="setting_help_and_about">Help &amp; About</string>
+    <string name="path">Path</string>
+    <string name="default_path_setting">Default Path</string>
+    <string name="dialog_confim">Confim</string>
+    <string name="parent_folder">Parent folder</string>
+    <string name="exit">Exit</string>
+    <string name="delete">Delete</string>
+    <string name="show_statusbar">Show StatusBar</string>
+    <string name="show_wifi_name">Show Wifi Name</string>
+    <string name="show_custom_icon">Show custom icon</string>
+    <string name="clock_show_seconds">Clock show seconds</string>
+    <string name="show_large_clock">Show large clock</string>
+    <string name="bottom_align_icons">Align icons from bottom</string>
+    <string name="start_at_boot">Start at boot</string>
+    <string name="notification_click_back_launcher">Click here, back to Launcher</string>
+    <string name="app_show_name">App name</string>
+    <string name="setting_theme_mode">主题</string>
+    <string-array name="theme_options_array">
+        <item>跟随系统</item>
+        <item>亮色模式</item>
+        <item>暗色模式</item>
+        <item>纯白背景</item>
+        <item>纯黑背景</item>
+        <item>透明黑字</item>
+        <item>透明白字</item>
+    </string-array>
+    <string name="setting_sort_mode">Sort</string>
+    <string name="setting_screen_orientation">Screen orientation</string>
+    <string name="sort_need_usage_permission">Please grant usage access permission for this sort mode</string>
+    <string name="clean_start">Start cleaning…</string>
+    <string name="clean_error">Clean error: %s</string>
+    <string name="clean_done">Cleaned: %s</string>
+</resources>
