@@ -221,8 +221,7 @@ public class SettingActivity extends Activity implements View.OnClickListener {
       public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
         int rowNum = position + 1;
         config.setRowNum(rowNum);
-        listener.onRowNumChanged(rowNum);
-        notifySettingsChanged();
+        if (listener != null) { listener.onRowNumChanged(rowNum); }
         notifySettingsChanged();
       }
 
@@ -237,7 +236,7 @@ public class SettingActivity extends Activity implements View.OnClickListener {
       public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
         int colNum = position + 1;
         config.setColNum(colNum);
-        listener.onColNumChanged(colNum);
+        if (listener != null) { listener.onColNumChanged(colNum); }
         notifySettingsChanged();
       }
 
@@ -252,7 +251,7 @@ public class SettingActivity extends Activity implements View.OnClickListener {
       public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
         int lines = (position == 3) ? Integer.MAX_VALUE : position;
         config.setAppNameLines(lines);
-        listener.onAppNameLinesChanged(lines);
+        if (listener != null) { listener.onAppNameLinesChanged(lines); }
         notifySettingsChanged();
       }
 
@@ -275,7 +274,7 @@ public class SettingActivity extends Activity implements View.OnClickListener {
           return;
         }
         config.setSortMode(position);
-        listener.onSortModeChanged(position);
+        if (listener != null) { listener.onSortModeChanged(position); }
         notifySettingsChanged();
       }
 
@@ -292,7 +291,7 @@ public class SettingActivity extends Activity implements View.OnClickListener {
           return;
         }
         config.setScreenOrientation(position);
-        listener.onScreenOrientationChanged(position);
+        if (listener != null) { listener.onScreenOrientationChanged(position); }
         notifySettingsChanged();
       }
 
@@ -309,7 +308,7 @@ public class SettingActivity extends Activity implements View.OnClickListener {
           return;
         }
         config.setThemeMode(position);
-        listener.onThemeModeChanged(position);
+        if (listener != null) { listener.onThemeModeChanged(position); }
         notifySettingsChanged();
       }
 
@@ -326,7 +325,7 @@ public class SettingActivity extends Activity implements View.OnClickListener {
         if (fromUser) {
           float newSize = 10 + progress / 10f;
           config.setFontSize(newSize);
-          listener.onFontSizeChanged(newSize);
+          if (listener != null) { listener.onFontSizeChanged(newSize); }
           notifySettingsChanged();
         }
       }
@@ -394,14 +393,14 @@ public class SettingActivity extends Activity implements View.OnClickListener {
   }
 
   private void handleDeleteApp() {
-    listener.onEnterManageMode();
+    if (listener != null) { listener.onEnterManageMode(); }
     finish();
   }
 
   private void handleToggleStatusBar() {
     boolean newValue = !config.isShowStatusBar();
     config.setShowStatusBar(newValue);
-    listener.onShowStatusBarChanged(newValue);
+    if (listener != null) { listener.onShowStatusBarChanged(newValue); }
     notifySettingsChanged();
     finish();
   }
@@ -410,7 +409,7 @@ public class SettingActivity extends Activity implements View.OnClickListener {
     boolean newValue = !config.isHideDivider();
     config.setHideDivider(newValue);
     hideDivider.setText(newValue ? "显示分隔线" : "隐藏分隔线");
-    listener.onHideDividerChanged(newValue);
+    if (listener != null) { listener.onHideDividerChanged(newValue); }
     notifySettingsChanged();
     finish();
   }
@@ -486,7 +485,7 @@ public class SettingActivity extends Activity implements View.OnClickListener {
       public void run() {
         boolean newValue = !config.isShowCustomIcon();
         config.setShowCustomIcon(newValue);
-        listener.onShowCustomIconChanged(newValue);
+        if (listener != null) { listener.onShowCustomIconChanged(newValue); }
         notifySettingsChanged();
         SettingActivity.this.finish();
       }
@@ -497,7 +496,7 @@ public class SettingActivity extends Activity implements View.OnClickListener {
     boolean newValue = !config.isClockShowSeconds();
     config.setClockShowSeconds(newValue);
     updateClockShowSecondsState();
-    listener.onClockShowSecondsChanged(newValue);
+    if (listener != null) { listener.onClockShowSecondsChanged(newValue); }
     notifySettingsChanged();
   }
 
@@ -521,7 +520,7 @@ public class SettingActivity extends Activity implements View.OnClickListener {
     boolean align = !config.isBottomAlignIcons();
     config.setBottomAlignIcons(align);
     bottomAlignIcons.getPaint().setStrikeThruText(!align);
-    listener.onBottomAlignIconsChanged(align);
+    if (listener != null) { listener.onBottomAlignIconsChanged(align); }
     notifySettingsChanged();
   }
 
