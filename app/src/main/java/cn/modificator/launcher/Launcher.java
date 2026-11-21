@@ -853,6 +853,8 @@ public class Launcher extends AppCompatActivity
       WifiControl.onClickWifiItem();
     } else if (AppDataCenter.CLEAR_PACKAGE_NAME.equals(pkgName)) {
       cleanMemory();
+    } else if (AppDataCenter.REFRESH_PACKAGE_NAME.equals(pkgName)) {
+      cn.modificator.launcher.model.EpdRefresh.fullRefresh(this);
     } else {
       ComponentName comp = new ComponentName(info.activityInfo.packageName, info.activityInfo.name);
       Intent intent = new Intent(Intent.ACTION_MAIN);
@@ -873,6 +875,8 @@ public class Launcher extends AppCompatActivity
       WifiControl.onLongClickWifiItem();
     } else if (AppDataCenter.CLEAR_PACKAGE_NAME.equals(packageName)) {
       // 内存清理图标，不做任何操作
+    } else if (AppDataCenter.REFRESH_PACKAGE_NAME.equals(packageName)) {
+      // 一键全刷图标，不做任何操作
     } else {
       showAppInfoDialog(info, packageName);
     }

@@ -173,7 +173,8 @@ public class AppItemBinder {
       boolean canDelete = false;
       if (!AppDataCenter.WIFI_PACKAGE_NAME.equals(pkg)
           && !AppDataCenter.LOCK_PACKAGE_NAME.equals(pkg)
-          && !AppDataCenter.CLEAR_PACKAGE_NAME.equals(pkg)) {
+          && !AppDataCenter.CLEAR_PACKAGE_NAME.equals(pkg)
+          && !AppDataCenter.REFRESH_PACKAGE_NAME.equals(pkg)) {
         try {
           canDelete = (packageManager.getPackageInfo(pkg, 0).applicationInfo.flags
               & ApplicationInfo.FLAG_SYSTEM) == 0;
@@ -204,6 +205,9 @@ public class AppItemBinder {
     } else if (AppDataCenter.CLEAR_PACKAGE_NAME.equals(pkg)) {
       loadIcon(holder.appImage, pkg, R.drawable.ic_onekeyclear, customIcons);
       holder.appName.setText(R.string.item_clear);
+    } else if (AppDataCenter.REFRESH_PACKAGE_NAME.equals(pkg)) {
+      loadIcon(holder.appImage, pkg, R.drawable.ic_full_refresh, customIcons);
+      holder.appName.setText(R.string.item_refresh);
     } else {
       loadIconAsync(holder.appImage, componentKey(info), info, customIcons, generation);
       holder.appName.setText(iconCache != null

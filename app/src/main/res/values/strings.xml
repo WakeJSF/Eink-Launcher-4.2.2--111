@@ -70,6 +70,8 @@
 
     <string name="item_lockscreen">Lock Screen</string>
     <string name="item_clear">Memory Clean</string>
+    <string name="item_refresh">Full Refresh</string>
+    <string name="epd_refresh_done">Full screen refresh</string>
     <string name="launch_failed">Launch failed</string>
     <string name="launch_devicemanager_failed">Please open Device Policy Manager and enable 咩E-Ink Launcher</string>
     <string name="launch_devicemanager">Open Device Policy Manager</string>

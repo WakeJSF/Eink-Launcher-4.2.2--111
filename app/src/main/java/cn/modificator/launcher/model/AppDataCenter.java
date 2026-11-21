@@ -34,6 +34,8 @@ public class AppDataCenter {
   public static final String LOCK_PACKAGE_NAME = "E-ink_Launcher.Lock";
   /** 虚拟包名：后台清理入口 */
   public static final String CLEAR_PACKAGE_NAME = "E-ink_Launcher.Clear";
+  /** 虚拟包名：一键全屏刷新入口 */
+  public static final String REFRESH_PACKAGE_NAME = "E-ink_Launcher.Refresh";
 
   private final Context mContext;
   private final List<ResolveInfo> mApps = new ArrayList<>();
@@ -243,6 +245,9 @@ public class AppDataCenter {
     if (showAll || !hiddenPackages.contains(CLEAR_PACKAGE_NAME)) {
       apps.add(createClearIcon());
     }
+    if (showAll || !hiddenPackages.contains(REFRESH_PACKAGE_NAME)) {
+      apps.add(createRefreshIcon());
+    }
     sortApps(apps, packageManager, requestSortMode);
     return apps;
   }
@@ -315,6 +320,14 @@ public class AppDataCenter {
     resolveInfo.icon = R.drawable.ic_onekeyclear;
     resolveInfo.activityInfo = new ActivityInfo();
     resolveInfo.activityInfo.packageName = CLEAR_PACKAGE_NAME;
+    return resolveInfo;
+  }
+
+  private ResolveInfo createRefreshIcon() {
+    ResolveInfo resolveInfo = new ResolveInfo();
+    resolveInfo.icon = R.drawable.ic_full_refresh;
+    resolveInfo.activityInfo = new ActivityInfo();
+    resolveInfo.activityInfo.packageName = REFRESH_PACKAGE_NAME;
     return resolveInfo;
   }
 }
