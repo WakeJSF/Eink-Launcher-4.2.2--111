@@ -88,7 +88,7 @@ public class ClockActivity extends AppCompatActivity {
   /** 将自定义字体应用到全屏时钟（大时间 + 日期），失败时恢复各自原始字体 */
   private void applyCustomFont() {
     if (config == null || tvTime == null || tvDate == null) return;
-    String fontName = config.getCustomFont();
+    String fontName = config.getClockFont();
     Typeface typeface = new FontManager().loadFont(fontName);
     tvTime.setTypeface(typeface != null ? typeface : defaultTimeTypeface);
     tvDate.setTypeface(typeface != null ? typeface : defaultDateTypeface);

@@ -20,6 +20,7 @@ public class Config {
   public static final String KEY_HIDE_APPS = "hideAppsKey";
   public static final String KEY_FONT_SIZE = "launcherFontSize";
   public static final String KEY_CUSTOM_FONT = "launcherCustomFont";
+  public static final String KEY_CLOCK_FONT = "launcherClockFont";
   public static final String KEY_HIDE_DIVIDER = "launcherHideDivider";
   public static final String KEY_SHOW_STATUS_BAR = "launcherShowStatusBar";
   public static final String KEY_SHOW_CUSTOM_ICON = "launcherShowCustomIcon";
@@ -56,6 +57,7 @@ public class Config {
   private int rowNum = -1;
   private float fontSize = -1;
   private String customFont;
+  private String clockFont;
   private int appNameLines = -1;
   private boolean hideDivider;
   private boolean showStatusBar;
@@ -211,6 +213,20 @@ public class Config {
   public void setCustomFont(String fileName) {
     this.customFont = fileName == null ? "" : fileName;
     prefs.edit().putString(KEY_CUSTOM_FONT, this.customFont).apply();
+  }
+
+  // ---- 大时钟字体（存字体文件名，空表示使用原始时钟字体） ----
+
+  public String getClockFont() {
+    if (clockFont == null) {
+      clockFont = prefs.getString(KEY_CLOCK_FONT, "");
+    }
+    return clockFont;
+  }
+
+  public void setClockFont(String fileName) {
+    this.clockFont = fileName == null ? "" : fileName;
+    prefs.edit().putString(KEY_CLOCK_FONT, this.clockFont).apply();
   }
 
   // ---- 分隔线 ----

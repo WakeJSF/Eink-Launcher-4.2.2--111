@@ -114,8 +114,9 @@
     <string name="clean_error">Clean error: %s</string>
     <string name="clean_done">Cleaned: %s</string>
 
-    <!-- 自定义桌面字体 -->
-    <string name="setting_custom_font">Desktop Font</string>
+    <!-- 自定义桌面字体（App 名字体与大时钟字体独立设置） -->
+    <string name="setting_custom_font">App Font</string>
+    <string name="setting_clock_font">Clock Font</string>
     <string name="font_system_default">System Default</string>
     <string name="font_open_folder">Font Folder</string>
     <string name="font_applied">Font applied: </string>

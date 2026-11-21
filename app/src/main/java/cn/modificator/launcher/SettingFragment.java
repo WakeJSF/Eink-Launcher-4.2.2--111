@@ -71,6 +71,7 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
     void onColNumChanged(int colNum);
     void onFontSizeChanged(float size);
     void onFontChanged(String fontName);
+    void onClockFontChanged(String fontName);
     void onAppNameLinesChanged(int lines);
     void onHideDividerChanged(boolean hide);
     void onShowStatusBarChanged(boolean show);
@@ -107,6 +108,8 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
   private View changeFontSize;
   private View customFont;
   private TextView customFontLabel;
+  private View clockFont;
+  private TextView clockFontLabel;
   private View deleteApp;
   private View helpAbout;
   private View menuFtp;
@@ -186,6 +189,8 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
     changeFontSize = rootView.findViewById(R.id.changeFontSize);
     customFont = rootView.findViewById(R.id.customFont);
     customFontLabel = rootView.findViewById(R.id.customFontLabel);
+    clockFont = rootView.findViewById(R.id.clockFont);
+    clockFontLabel = rootView.findViewById(R.id.clockFontLabel);
     deleteApp = rootView.findViewById(R.id.deleteApp);
     helpAbout = rootView.findViewById(R.id.helpAbout);
     menuFtp = rootView.findViewById(R.id.menu_ftp);
@@ -202,6 +207,7 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
     showWifiName.setOnClickListener(this);
     changeFontSize.setOnClickListener(this);
     customFont.setOnClickListener(this);
+    clockFont.setOnClickListener(this);
     deleteApp.setOnClickListener(this);
     helpAbout.setOnClickListener(this);
     menuFtp.setOnClickListener(this);
@@ -221,13 +227,22 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
     updateStartAtBootState();
     fontControl.setProgress((int) ((config.getFontSize() - 10) * 10));
     updateCustomFontLabel();
+    updateClockFontLabel();
   }
 
-  /** 更新"桌面字体"项的副标题：显示当前字体名或"系统默认" */
+  /** 更新"App 名字体"项的副标题：显示当前字体名或"系统默认" */
   private void updateCustomFontLabel() {
     if (customFontLabel == null) return;
     String name = config.getCustomFont();
     customFontLabel.setText(name == null || name.length() == 0
+        ? getString(R.string.font_system_default) : name);
+  }
+
+  /** 更新"大时钟字体"项的副标题：显示当前字体名或"系统默认" */
+  private void updateClockFontLabel() {
+    if (clockFontLabel == null) return;
+    String name = config.getClockFont();
+    clockFontLabel.setText(name == null || name.length() == 0
         ? getString(R.string.font_system_default) : name);
   }
 
@@ -248,6 +263,7 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
         startAtBoot,
         changeFontSize,
         customFont,
+        clockFont,
         deleteApp,
         themeModeSpinner,
         setWallpaper,
@@ -423,6 +439,8 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
       fontControl.requestFocus();
     } else if (id == R.id.customFont) {
       handleCustomFont();
+    } else if (id == R.id.clockFont) {
+      handleClockFont();
     } else if (id == R.id.hideDivider) {
       handleToggleDivider();
     } else if (id == R.id.menu_ftp) {
@@ -467,17 +485,29 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
     closeSettings();
   }
 
+  /** App 名字体设置入口 */
+  private void handleCustomFont() {
+    showFontDialog(false);
+  }
+
+  /** 大时钟字体设置入口 */
+  private void handleClockFont() {
+    showFontDialog(true);
+  }
+
   /**
    * 弹出字体选择对话框。列出 font 目录下的 .ttf/.otf 文件，加一个"系统默认"选项。
-   * 选中后写入 Config 并通过 listener 立即应用到桌面。
+   * 选中后写入对应的 Config 并通过 listener 立即应用。
+   *
+   * @param forClock true=大时钟字体，false=App 名字体
    */
-  private void handleCustomFont() {
+  private void showFontDialog(final boolean forClock) {
     final Activity activity = getActivity();
     if (activity == null) return;
 
     FontManager.ensureFontDirectory();
     final List<File> fonts = FontManager.listFonts();
-    final String current = config.getCustomFont();
+    final String current = forClock ? config.getClockFont() : config.getCustomFont();
 
     final String[] labels = new String[fonts.size() + 1];
     labels[0] = getString(R.string.font_system_default);
@@ -490,15 +520,23 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
     }
 
     new AlertDialog.Builder(activity)
-        .setTitle(R.string.setting_custom_font)
+        .setTitle(forClock ? R.string.setting_clock_font : R.string.setting_custom_font)
         .setSingleChoiceItems(labels, checked, new DialogInterface.OnClickListener() {
           @Override
           public void onClick(DialogInterface dialog, int which) {
             String chosen = (which == 0) ? "" : fonts.get(which - 1).getName();
-            config.setCustomFont(chosen);
-            updateCustomFontLabel();
-            if (listener != null) {
-              listener.onFontChanged(chosen);
+            if (forClock) {
+              config.setClockFont(chosen);
+              updateClockFontLabel();
+              if (listener != null) {
+                listener.onClockFontChanged(chosen);
+              }
+            } else {
+              config.setCustomFont(chosen);
+              updateCustomFontLabel();
+              if (listener != null) {
+                listener.onFontChanged(chosen);
+              }
             }
             dialog.dismiss();
             Toast.makeText(activity,

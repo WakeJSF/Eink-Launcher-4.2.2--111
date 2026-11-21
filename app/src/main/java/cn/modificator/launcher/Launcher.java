@@ -603,17 +603,25 @@ public class Launcher extends AppCompatActivity
     adapter.setFontSize(size);
   }
 
-  /** 应用桌面自定义字体：从 Config 读取字体文件名并加载，失败降级为各自原始字体 */
+  /** 统一入口：分别应用 App 名字体与大时钟字体（两者独立配置） */
   private void applyCustomFont() {
-    if (fontManager == null || config == null) return;
-    String fontName = config.getCustomFont();
-    Typeface typeface = fontManager.loadFont(fontName);
+    applyAppFont();
+    applyClockFont();
+  }
 
-    // App 名称
+  /** App 名称字体（失败降级为系统默认） */
+  private void applyAppFont() {
+    if (fontManager == null || config == null) return;
+    Typeface typeface = fontManager.loadFont(config.getCustomFont());
     if (adapter != null) {
       adapter.setAppNameTypeface(typeface);
     }
-    // 顶部大时钟（大时间 + 年月日星期）：有自定义字体就用它，否则恢复各自的原始字体
+  }
+
+  /** 顶部大时钟字体（大时间 + 年月日星期），失败恢复各自原始字体 */
+  private void applyClockFont() {
+    if (fontManager == null || config == null) return;
+    Typeface typeface = fontManager.loadFont(config.getClockFont());
     Typeface timeFont = typeface != null ? typeface : defaultLargeClockTimeTypeface;
     Typeface dateFont = typeface != null ? typeface : defaultLargeClockDateTypeface;
     if (largeClockTime != null) {
@@ -632,7 +640,14 @@ public class Launcher extends AppCompatActivity
   public void onFontChanged(String fontName) {
     config.setCustomFont(fontName);
     if (fontManager != null) fontManager.resetFailures();
-    applyCustomFont();
+    applyAppFont();
+  }
+
+  @Override
+  public void onClockFontChanged(String fontName) {
+    config.setClockFont(fontName);
+    if (fontManager != null) fontManager.resetFailures();
+    applyClockFont();
   }
 
   @Override
