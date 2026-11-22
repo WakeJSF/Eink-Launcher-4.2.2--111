@@ -7,13 +7,15 @@ import android.graphics.drawable.Drawable;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
-import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
 import android.widget.ImageView;
 
 import java.io.File;
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -24,7 +26,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import cn.modificator.launcher.R;
 import cn.modificator.launcher.model.AppDataCenter;
@@ -75,6 +76,10 @@ public class AppItemBinder {
     }
   });
   private final Set<String> loadingIcons = Collections.synchronizedSet(new HashSet<String>());
+  // 同一 cacheKey 正在加载时，翻页后新绑定的 ImageView 登记到这里，
+  // 待加载完成一次性回填，避免"新页图标永远空白"的竞态。
+  private final Map<String, java.util.List<WeakReference<ImageView>>> pendingIconViews =
+      new HashMap<String, java.util.List<WeakReference<ImageView>>>();
   private final AtomicInteger bindGeneration = new AtomicInteger();
 
   private Callback callback;
@@ -282,7 +287,19 @@ public class AppItemBinder {
       return;
     }
     iv.setImageDrawable(null);
-    if (!loadingIcons.add(cacheKey)) return;
+    if (!loadingIcons.add(cacheKey)) {
+      // 该图标已有任务在加载（常见于快速翻页）。登记当前 View 为等待者，
+      // 加载完成后统一回填，避免新页 cell 一直是空白。
+      synchronized (pendingIconViews) {
+        java.util.List<WeakReference<ImageView>> waiters = pendingIconViews.get(cacheKey);
+        if (waiters == null) {
+          waiters = new ArrayList<WeakReference<ImageView>>();
+          pendingIconViews.put(cacheKey, waiters);
+        }
+        waiters.add(new WeakReference<ImageView>(iv));
+      }
+      return;
+    }
     iconLoadExecutor.execute(new Runnable() {
       @Override
       public void run() {
@@ -293,11 +310,24 @@ public class AppItemBinder {
           mainHandler.post(new Runnable() {
             @Override
             public void run() {
+              // 回填发起加载的 View：仅当该 cell 仍绑定同一组件时才设置，
+              // 防止旧页结果覆盖新页内容。
               Object boundPackage = iv.getTag(R.id.appImage);
-              // A result remains valid across a newer bind when the same
-              // component is still attached to this cell.
-              if (cacheKey.equals(boundPackage) && generation <= bindGeneration.get()) {
+              if (cacheKey.equals(boundPackage)) {
                 iv.setImageDrawable(icon);
+              }
+              // 回填所有等待同一图标的 View（快速翻页时新绑定的 cell）。
+              synchronized (pendingIconViews) {
+                java.util.List<WeakReference<ImageView>> waiters = pendingIconViews.remove(cacheKey);
+                if (waiters != null) {
+                  for (WeakReference<ImageView> ref : waiters) {
+                    ImageView waiting = ref.get();
+                    if (waiting == null) continue;
+                    if (cacheKey.equals(waiting.getTag(R.id.appImage))) {
+                      waiting.setImageDrawable(icon);
+                    }
+                  }
+                }
               }
             }
           });
@@ -314,22 +344,23 @@ public class AppItemBinder {
   }
 
   private void setCustomIcon(ImageView view, File file, String componentKey) {
-    BitmapFactory.Options bounds = new BitmapFactory.Options();
-    bounds.inJustDecodeBounds = true;
-    BitmapFactory.decodeFile(file.getAbsolutePath(), bounds);
-
     // 获取目标尺寸，限制最大解码大小以避免 OOM
     int target = Math.max(64, Math.max(view.getWidth(), view.getHeight()));
     if (target <= 64) target = 128;  // Android 4.2.2 降低默认值
 
     String customCacheKey = componentKey + "#custom#" + file.lastModified() + "#" + target;
+    // 先查缓存：命中即返回，避免命中时也做一次 decodeFile 读尺寸（翻页时反复文件 IO）。
     Drawable cached = iconCache != null ? iconCache.getCachedIcon(customCacheKey) : null;
     if (cached != null) {
       view.setImageDrawable(cached);
       return;
     }
 
-    // 计算采样率，限制最大解码尺寸
+    // 仅未命中时才读取原图尺寸计算采样率
+    BitmapFactory.Options bounds = new BitmapFactory.Options();
+    bounds.inJustDecodeBounds = true;
+    BitmapFactory.decodeFile(file.getAbsolutePath(), bounds);
+
     int sample = 1;
     while (bounds.outWidth / sample > target * 2 || bounds.outHeight / sample > target * 2) {
       sample <<= 1;
@@ -346,8 +377,9 @@ public class AppItemBinder {
     try {
       bitmap = BitmapFactory.decodeFile(file.getAbsolutePath(), options);
     } catch (OutOfMemoryError e) {
-      // 内存不足时降级处理
-      android.util.Log.w("AppItemBinder", "OOM when decoding custom icon, using URI fallback");
+      android.util.Log.w("AppItemBinder", "OOM when decoding custom icon: " + file.getName());
+    } catch (Throwable t) {
+      android.util.Log.w("AppItemBinder", "decode custom icon failed: " + file.getName(), t);
     }
 
     if (bitmap != null) {
@@ -355,12 +387,8 @@ public class AppItemBinder {
       if (iconCache != null) iconCache.putIcon(customCacheKey, drawable);
       view.setImageDrawable(drawable);
     } else {
-      // 降级到 URI 方式
-      try {
-        view.setImageURI(Uri.fromFile(file));
-      } catch (Exception e) {
-        android.util.Log.e("AppItemBinder", "Failed to load custom icon: " + file.getName(), e);
-      }
+      // 解码失败时清空，不再用 setImageURI（大图直接解码正是 OOM 根源）。
+      view.setImageDrawable(null);
     }
   }
 
@@ -370,6 +398,9 @@ public class AppItemBinder {
   public void shutdown() {
     bindGeneration.incrementAndGet();
     loadingIcons.clear();
+    synchronized (pendingIconViews) {
+      pendingIconViews.clear();
+    }
     mainHandler.removeCallbacksAndMessages(null);
 
     // 优雅关闭，等待最多 5 秒

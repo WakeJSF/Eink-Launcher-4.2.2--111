@@ -65,6 +65,7 @@
     <string name="wifi_status_connecting">WiFi 연결 중</string>
     <string name="wifi_status_disconnected">WiFi 연결 해제</string>
     <string name="wifi_status_disconnecting">WiFi 연결 해제 중</string>
+    <string name="wifi_ssid_only">%s</string>
     <string name="wifi_status_off">WiFi 꺼짐</string>
     <string name="wifi_status_on">WiFi 켜짐</string>
     <string name="wifi_status_opening">WiFi 여는 중</string>

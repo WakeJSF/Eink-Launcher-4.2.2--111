@@ -62,6 +62,7 @@
     <string name="wifi_status_connecting">Łączenie WiFi</string>
     <string name="wifi_status_disconnected">WiFi wyłączone</string>
     <string name="wifi_status_disconnecting">Rozłączanie WiFi</string>
+    <string name="wifi_ssid_only">%s</string>
 
     <string name="item_lockscreen">Zablokuj ekran</string>
 

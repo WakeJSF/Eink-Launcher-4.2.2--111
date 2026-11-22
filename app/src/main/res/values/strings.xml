@@ -67,6 +67,8 @@
     <string name="wifi_status_connecting">WiFi connecting</string>
     <string name="wifi_status_disconnected">WiFi disconnected</string>
     <string name="wifi_status_disconnecting">WiFi disconnecting</string>
+    <!-- 连接时直接显示 SSID 名字（单行） -->
+    <string name="wifi_ssid_only">%s</string>
 
     <string name="item_lockscreen">Lock Screen</string>
     <string name="item_clear">Memory Clean</string>

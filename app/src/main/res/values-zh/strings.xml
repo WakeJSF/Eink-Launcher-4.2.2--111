@@ -61,6 +61,7 @@
     <string name="wifi_status_connecting">WiFi 连接中</string>
     <string name="wifi_status_disconnected">WiFi 已断开</string>
     <string name="wifi_status_disconnecting">WiFi 断开中</string>
+    <string name="wifi_ssid_only">%s</string>
 
     <string name="item_lockscreen">一键锁屏</string>
     <string name="item_clear">内存清理</string>

@@ -910,14 +910,16 @@ public class Launcher extends AppCompatActivity
   @Override
   public void onPageNext() {
     showNextPageAndHideSelection();
-    updateLargeClockLayout();
+    // showNextPageAndHideSelection 内部已调用 applyCurrentPageLayout 完成布局与重新绑定，
+    // 这里只需刷新大时钟字号，避免再次全量 configure/bindAll 造成翻页卡顿。
+    updateLargeClockTextSize();
     updateTimeShow();
   }
 
   @Override
   public void onPagePrev() {
     showLastPageAndHideSelection();
-    updateLargeClockLayout();
+    updateLargeClockTextSize();
     updateTimeShow();
   }
 
