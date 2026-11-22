@@ -28,6 +28,7 @@ public class Config {
   public static final String KEY_THEME_MODE = "themeMode";
   public static final String KEY_CLOCK_SHOW_SECONDS = "launcherClockShowSeconds";
   public static final String KEY_SHOW_LARGE_CLOCK = "launcherShowLargeClock";
+  public static final String KEY_SHOW_APP_NAME = "launcherShowAppName";
   public static final String KEY_BOTTOM_ALIGN_ICONS = "launcherBottomAlignIcons";
   public static final String KEY_SCREEN_ORIENTATION = "launcherScreenOrientation";
   public static final String KEY_START_AT_BOOT = "launcherStartAtBoot";
@@ -44,6 +45,7 @@ public class Config {
   private static final int DEFAULT_THEME_MODE = 3;
   private static final boolean DEFAULT_CLOCK_SHOW_SECONDS = false;
   private static final boolean DEFAULT_SHOW_LARGE_CLOCK = true;
+  private static final boolean DEFAULT_SHOW_APP_NAME = true;
   private static final boolean DEFAULT_BOTTOM_ALIGN_ICONS = false;
   private static final int DEFAULT_SCREEN_ORIENTATION = 0;
   private static final boolean DEFAULT_START_AT_BOOT = false;
@@ -64,6 +66,7 @@ public class Config {
   private boolean showCustomIcon;
   private boolean clockShowSeconds;
   private boolean showLargeClock;
+  private boolean showAppName;
   private boolean bottomAlignIcons;
   private boolean startAtBoot;
   private int sortMode = -1;
@@ -80,6 +83,7 @@ public class Config {
     this.showCustomIcon = prefs.getBoolean(KEY_SHOW_CUSTOM_ICON, DEFAULT_SHOW_CUSTOM_ICON);
     this.clockShowSeconds = prefs.getBoolean(KEY_CLOCK_SHOW_SECONDS, DEFAULT_CLOCK_SHOW_SECONDS);
     this.showLargeClock = prefs.getBoolean(KEY_SHOW_LARGE_CLOCK, DEFAULT_SHOW_LARGE_CLOCK);
+    this.showAppName = prefs.getBoolean(KEY_SHOW_APP_NAME, DEFAULT_SHOW_APP_NAME);
     this.bottomAlignIcons = prefs.getBoolean(KEY_BOTTOM_ALIGN_ICONS, DEFAULT_BOTTOM_ALIGN_ICONS);
     this.startAtBoot = prefs.getBoolean(KEY_START_AT_BOOT, DEFAULT_START_AT_BOOT);
     this.appNameLines = prefs.getInt(KEY_APP_NAME_LINES, DEFAULT_APP_NAME_LINES);
@@ -278,6 +282,13 @@ public class Config {
   public void setShowLargeClock(boolean show) {
     this.showLargeClock = show;
     prefs.edit().putBoolean(KEY_SHOW_LARGE_CLOCK, show).apply();
+  }
+
+  public boolean isShowAppName() { return showAppName; }
+
+  public void setShowAppName(boolean show) {
+    this.showAppName = show;
+    prefs.edit().putBoolean(KEY_SHOW_APP_NAME, show).apply();
   }
 
   public boolean isBottomAlignIcons() { return bottomAlignIcons; }

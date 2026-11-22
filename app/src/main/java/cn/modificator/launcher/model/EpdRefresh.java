@@ -10,12 +10,9 @@ import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
-import android.widget.Toast;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-
-import cn.modificator.launcher.R;
 
 /**
  * 一键全屏刷新（E-Ink GC16 / 全刷）工具。
@@ -66,8 +63,7 @@ public final class EpdRefresh {
       showFlashOverlay(activity);
     }
 
-    String msg = activity.getString(R.string.epd_refresh_done);
-    Toast.makeText(activity, msg, Toast.LENGTH_SHORT).show();
+    // 按用户要求：全刷不再弹出 Toast 提示（刷屏本身已是视觉反馈）。
     Log.i(TAG, "fullRefresh: boyue=" + boyueOk + ", broadcasts=" + sent + ", vendorSdk=" + sdkOk);
   }
 

@@ -95,6 +95,7 @@
     <string name="show_custom_icon">Show custom icon</string>
     <string name="clock_show_seconds">Clock show seconds</string>
     <string name="show_large_clock">Show large clock</string>
+    <string name="show_app_name">Show app names</string>
     <string name="bottom_align_icons">Align icons from bottom</string>
     <string name="start_at_boot">Start at boot</string>
     <string name="notification_click_back_launcher">Click here, back to Launcher</string>

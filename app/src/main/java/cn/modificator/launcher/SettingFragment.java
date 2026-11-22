@@ -78,6 +78,7 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
     void onShowCustomIconChanged(boolean show);
     void onClockShowSecondsChanged(boolean show);
     void onShowLargeClockChanged(boolean show);
+    void onShowAppNameChanged(boolean show);
     void onBottomAlignIconsChanged(boolean align);
     void onSortModeChanged(int mode);
     void onThemeModeChanged(int mode);
@@ -102,6 +103,7 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
   private TextView showCustomIcon;
   private TextView clockShowSeconds;
   private TextView showLargeClock;
+  private TextView showAppName;
   private TextView bottomAlignIcons;
   private TextView startAtBoot;
   private Config config;
@@ -173,6 +175,7 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
     showCustomIcon = rootView.findViewById(R.id.showCustomIcon);
     clockShowSeconds = rootView.findViewById(R.id.clockShowSeconds);
     showLargeClock = rootView.findViewById(R.id.showLargeClock);
+    showAppName = rootView.findViewById(R.id.showAppName);
     bottomAlignIcons = rootView.findViewById(R.id.bottomAlignIcons);
     startAtBoot = rootView.findViewById(R.id.startAtBoot);
     showWifiName = rootView.findViewById(R.id.showWifiName);
@@ -202,6 +205,7 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
     showCustomIcon.setOnClickListener(this);
     clockShowSeconds.setOnClickListener(this);
     showLargeClock.setOnClickListener(this);
+    showAppName.setOnClickListener(this);
     bottomAlignIcons.setOnClickListener(this);
     startAtBoot.setOnClickListener(this);
     showWifiName.setOnClickListener(this);
@@ -223,6 +227,7 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
     showCustomIcon.getPaint().setStrikeThruText(!config.isShowCustomIcon());
     updateClockShowSecondsState();
     showLargeClock.getPaint().setStrikeThruText(!config.isShowLargeClock());
+    showAppName.getPaint().setStrikeThruText(!config.isShowAppName());
     bottomAlignIcons.getPaint().setStrikeThruText(!config.isBottomAlignIcons());
     updateStartAtBootState();
     fontControl.setProgress((int) ((config.getFontSize() - 10) * 10));
@@ -259,6 +264,7 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
         showCustomIcon,
         clockShowSeconds,
         showLargeClock,
+        showAppName,
         bottomAlignIcons,
         startAtBoot,
         changeFontSize,
@@ -453,6 +459,8 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
       handleToggleClockShowSeconds();
     } else if (id == R.id.showLargeClock) {
       handleToggleLargeClock();
+    } else if (id == R.id.showAppName) {
+      handleToggleShowAppName();
     } else if (id == R.id.bottomAlignIcons) {
       handleToggleBottomAlignIcons();
     } else if (id == R.id.startAtBoot) {
@@ -653,6 +661,16 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
       settingListener.onShowLargeClockChanged(show);
     }
     closeSettings();
+  }
+
+  private void handleToggleShowAppName() {
+    boolean show = !config.isShowAppName();
+    config.setShowAppName(show);
+    showAppName.getPaint().setStrikeThruText(!show);
+    OnSettingChangeListener settingListener = listener;
+    if (settingListener != null) {
+      settingListener.onShowAppNameChanged(show);
+    }
   }
 
   /** 通过宿主 Activity 关闭设置页面 */

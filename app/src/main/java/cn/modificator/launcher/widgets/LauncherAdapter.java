@@ -66,6 +66,7 @@ public class LauncherAdapter {
   private float fontSize = 14;
   private int appNameLines = Integer.MAX_VALUE;
   private Typeface appNameTypeface;
+  private boolean showAppName = true;
 
   // =========================================================================
   // View 绑定（包级可见，由 EInkLauncherView 调用）
@@ -128,6 +129,14 @@ public class LauncherAdapter {
     }
   }
 
+  /** 设置是否显示 App 名称。已存在和此后新建的 ViewHolder 都会应用。 */
+  public void setAppNameVisible(boolean show) {
+    this.showAppName = show;
+    for (ItemViewHolder holder : holders) {
+      holder.appName.setVisibility(show ? View.VISIBLE : View.GONE);
+    }
+  }
+
   // =========================================================================
   // 数据
   // =========================================================================
@@ -183,6 +192,7 @@ public class LauncherAdapter {
     holder.appName.setMinLines(appNameLines == 2 ? appNameLines : 0);
     holder.appName.setMaxLines(appNameLines);
     holder.appName.setEllipsize(TextUtils.TruncateAt.END);
+    holder.appName.setVisibility(showAppName ? View.VISIBLE : View.GONE);
 
     return holder;
   }

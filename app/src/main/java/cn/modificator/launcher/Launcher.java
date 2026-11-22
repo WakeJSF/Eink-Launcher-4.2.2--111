@@ -500,6 +500,7 @@ public class Launcher extends AppCompatActivity
     adapter.setBinder(binder);
     adapter.setFontSize(config.getFontSize());
     adapter.setAppNameLines(config.getAppNameLines());
+    adapter.setAppNameVisible(config.isShowAppName());
     applyCustomFont();
     launcherView.setAdapter(adapter);
     launcherView.setOnPageChangeListener(this);
@@ -688,6 +689,14 @@ public class Launcher extends AppCompatActivity
     updateTimeShow();
     launcherView.selectFirstAvailable();
     clearKeyboardFocus();
+  }
+
+  @Override
+  public void onShowAppNameChanged(boolean show) {
+    config.setShowAppName(show);
+    if (adapter != null) {
+      adapter.setAppNameVisible(show);
+    }
   }
 
   @Override
