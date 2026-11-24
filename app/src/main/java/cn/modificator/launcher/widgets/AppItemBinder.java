@@ -192,6 +192,49 @@ public class AppItemBinder {
     }
   }
 
+  /** 供 Dock 使用的静态图标绑定（复用安全解码与缓存逻辑） */
+  public void bindDockIcon(ImageView iv, ResolveInfo info, boolean useCustomIcon) {
+    if (iv == null || info == null || info.activityInfo == null) return;
+    String pkg = info.activityInfo.packageName;
+    Map<String, File> customIcons = useCustomIcon && iconCache != null
+        ? iconCache.getCustomIconMap() : null;
+    if (AppDataCenter.WIFI_PACKAGE_NAME.equals(pkg)) {
+      iv.setImageResource(R.drawable.wifi_on);
+    } else if (AppDataCenter.LOCK_PACKAGE_NAME.equals(pkg)) {
+      loadIcon(iv, pkg, R.drawable.ic_onekeylock, customIcons);
+    } else if (AppDataCenter.CLEAR_PACKAGE_NAME.equals(pkg)) {
+      loadIcon(iv, pkg, R.drawable.ic_onekeyclear, customIcons);
+    } else if (AppDataCenter.REFRESH_PACKAGE_NAME.equals(pkg)) {
+      loadIcon(iv, pkg, R.drawable.ic_full_refresh, customIcons);
+    } else if (AppDataCenter.SETTINGS_PACKAGE_NAME.equals(pkg)) {
+      loadIcon(iv, pkg, R.drawable.navibar_icon_settings_highlight, customIcons);
+    } else {
+      loadIcon(iv, componentKey(info), info, customIcons);
+    }
+  }
+
+  /** 供 Dock 使用的标签，虚拟项返回应用内字符串 */
+  public CharSequence getDockLabel(ResolveInfo info) {
+    if (info == null || info.activityInfo == null) return "";
+    String pkg = info.activityInfo.packageName;
+    if (AppDataCenter.LOCK_PACKAGE_NAME.equals(pkg)) {
+      return packageManager.getText("cn.modificator.launcher", R.string.item_lockscreen, null);
+    }
+    if (AppDataCenter.CLEAR_PACKAGE_NAME.equals(pkg)) {
+      return packageManager.getText("cn.modificator.launcher", R.string.item_clear, null);
+    }
+    if (AppDataCenter.REFRESH_PACKAGE_NAME.equals(pkg)) {
+      return packageManager.getText("cn.modificator.launcher", R.string.item_refresh, null);
+    }
+    if (AppDataCenter.SETTINGS_PACKAGE_NAME.equals(pkg)) {
+      return packageManager.getText("cn.modificator.launcher", R.string.item_settings, null);
+    }
+    if (AppDataCenter.WIFI_PACKAGE_NAME.equals(pkg)) return "WiFi";
+    return iconCache != null
+        ? iconCache.getLabel(pkg, info, packageManager)
+        : info.loadLabel(packageManager);
+  }
+
   // =========================================================================
   // 单项绑定
   // =========================================================================
@@ -213,6 +256,9 @@ public class AppItemBinder {
     } else if (AppDataCenter.REFRESH_PACKAGE_NAME.equals(pkg)) {
       loadIcon(holder.appImage, pkg, R.drawable.ic_full_refresh, customIcons);
       holder.appName.setText(R.string.item_refresh);
+    } else if (AppDataCenter.SETTINGS_PACKAGE_NAME.equals(pkg)) {
+      loadIcon(holder.appImage, pkg, R.drawable.navibar_icon_settings_highlight, customIcons);
+      holder.appName.setText(R.string.item_settings);
     } else {
       loadIconAsync(holder.appImage, componentKey(info), info, customIcons, generation);
       holder.appName.setText(iconCache != null

@@ -14,6 +14,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -28,6 +29,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.SeekBar;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -36,6 +38,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 
 import cn.modificator.launcher.ftpservice.FTPService;
+import cn.modificator.launcher.model.AppDataCenter;
 import cn.modificator.launcher.model.AppSortComparator;
 import cn.modificator.launcher.model.FontManager;
 import cn.modificator.launcher.model.WifiControl;
@@ -43,7 +46,10 @@ import cn.modificator.launcher.model.WifiControl;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -84,6 +90,10 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
     void onThemeModeChanged(int mode);
     void onScreenOrientationChanged(int mode);
     void onEnterManageMode();
+    List<ResolveInfo> getDockCandidates();
+    List<String> getDockSlots();
+    boolean addToDock(String componentKey, int slot);
+    boolean removeFromDock(String componentKey);
   }
 
   private OnSettingChangeListener listener;
@@ -113,6 +123,7 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
   private View clockFont;
   private TextView clockFontLabel;
   private View deleteApp;
+  private View dockManager;
   private View helpAbout;
   private View menuFtp;
   private boolean waitingForFtpStorageAccess;
@@ -195,6 +206,7 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
     clockFont = rootView.findViewById(R.id.clockFont);
     clockFontLabel = rootView.findViewById(R.id.clockFontLabel);
     deleteApp = rootView.findViewById(R.id.deleteApp);
+    dockManager = rootView.findViewById(R.id.dockManager);
     helpAbout = rootView.findViewById(R.id.helpAbout);
     menuFtp = rootView.findViewById(R.id.menu_ftp);
     openDeviceManager = rootView.findViewById(R.id.openDeviceManager);
@@ -213,6 +225,7 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
     customFont.setOnClickListener(this);
     clockFont.setOnClickListener(this);
     deleteApp.setOnClickListener(this);
+    dockManager.setOnClickListener(this);
     helpAbout.setOnClickListener(this);
     menuFtp.setOnClickListener(this);
     openDeviceManager.setOnClickListener(this);
@@ -271,6 +284,7 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
         customFont,
         clockFont,
         deleteApp,
+        dockManager,
         themeModeSpinner,
         setWallpaper,
         openDeviceManager,
@@ -431,6 +445,8 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
       closeSettings();
     } else if (id == R.id.deleteApp) {
       handleDeleteApp();
+    } else if (id == R.id.dockManager) {
+      showDockManager();
     } else if (id == R.id.showStatusBar) {
       handleToggleStatusBar();
     } else if (id == R.id.helpAbout) {
@@ -476,6 +492,85 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
   private void handleDeleteApp() {
     listener.onEnterManageMode();
     closeSettings();
+  }
+
+  /** 从设置页打开应用列表，点击或长按应用即可放入 Dock */
+  private void showDockManager() {
+    final Activity activity = getActivity();
+    if (activity == null || listener == null) return;
+    final List<ResolveInfo> apps = listener.getDockCandidates();
+    final List<String> labels = new ArrayList<String>();
+    PackageManager pm = activity.getPackageManager();
+    for (ResolveInfo info : apps) {
+      CharSequence label = info.loadLabel(pm);
+      labels.add(label != null && label.length() > 0
+          ? label.toString() : info.activityInfo.packageName);
+    }
+    ArrayAdapter<String> adapter = new ArrayAdapter<String>(activity,
+        android.R.layout.simple_list_item_1, labels);
+    AlertDialog dialog = new AlertDialog.Builder(activity)
+        .setTitle(R.string.dock_manager_title)
+        .setAdapter(adapter, new DialogInterface.OnClickListener() {
+          @Override
+          public void onClick(DialogInterface dialog, int which) {
+            if (which >= 0 && which < apps.size()) showDockSlotDialog(apps.get(which));
+          }
+        })
+        .setNegativeButton(android.R.string.cancel, null)
+        .create();
+    dialog.getListView().setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+      @Override
+      public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+        if (position >= 0 && position < apps.size()) showDockSlotDialog(apps.get(position));
+        return true;
+      }
+    });
+    dialog.show();
+  }
+
+  /** 选择目标槽位；已在 Dock 中的应用也可以移出 */
+  private void showDockSlotDialog(final ResolveInfo info) {
+    final Activity activity = getActivity();
+    if (activity == null || listener == null) return;
+    final String key = AppDataCenter.componentKey(info);
+    final List<String> slots = listener.getDockSlots();
+    List<ResolveInfo> candidates = listener.getDockCandidates();
+    Map<String, String> names = new HashMap<String, String>();
+    for (ResolveInfo candidate : candidates) {
+      CharSequence label = candidate.loadLabel(activity.getPackageManager());
+      names.put(AppDataCenter.componentKey(candidate),
+          label != null && label.length() > 0 ? label.toString() : candidate.activityInfo.packageName);
+    }
+    final boolean canRemove = slots.contains(key);
+    String[] items = new String[canRemove ? 5 : 4];
+    for (int i = 0; i < 4; i++) {
+      String occupied = i < slots.size() ? slots.get(i) : "";
+      if (occupied == null || occupied.length() == 0) {
+        items[i] = (i + 1) + ". " + getString(R.string.dock_empty_slot);
+      } else {
+        String name = names.get(occupied);
+        items[i] = (i + 1) + ". " + (name != null ? name : occupied);
+      }
+    }
+    if (canRemove) items[4] = getString(R.string.dock_remove);
+    String chosen = names.get(key);
+    new AlertDialog.Builder(activity)
+        .setTitle(getString(R.string.dock_add_to) + ": "
+            + (chosen != null ? chosen : info.activityInfo.packageName))
+        .setItems(items, new DialogInterface.OnClickListener() {
+          @Override
+          public void onClick(DialogInterface dialog, int which) {
+            if (which >= 0 && which < 4) {
+              if (!listener.addToDock(key, which)) {
+                Toast.makeText(activity, R.string.dock_slot_full, Toast.LENGTH_SHORT).show();
+              }
+            } else if (canRemove && which == 4) {
+              listener.removeFromDock(key);
+            }
+          }
+        })
+        .setNegativeButton(android.R.string.cancel, null)
+        .show();
   }
 
   private void handleToggleStatusBar() {

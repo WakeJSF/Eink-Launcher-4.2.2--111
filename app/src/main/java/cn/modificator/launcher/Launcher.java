@@ -32,6 +32,7 @@ import android.text.format.DateFormat;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -46,9 +47,13 @@ import androidx.appcompat.app.AppCompatDelegate;
 
 import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 import cn.modificator.launcher.ftpservice.FTPReceiver;
@@ -87,6 +92,13 @@ public class Launcher extends AppCompatActivity
   private TextView largeClockTime;
   private TextView largeClockDate;
   private ImageView settingIcon;
+  private View topDivider;
+  private LinearLayout pageIndicator;
+  private BatteryView topBatteryProgress;
+  private TextView topBatteryStatus;
+  private static final int DOCK_SIZE = 4;
+  private final View[] dockSlotViews = new View[DOCK_SIZE];
+  private final ResolveInfo[] dockInfos = new ResolveInfo[DOCK_SIZE];
 
   // ---- Data ----
   private AppDataCenter dataCenter;
@@ -451,6 +463,10 @@ public class Launcher extends AppCompatActivity
     largeClockContainer = findViewById(R.id.largeClockContainer);
     largeClockTime = findViewById(R.id.largeClockTime);
     largeClockDate = findViewById(R.id.largeClockDate);
+    topDivider = findViewById(R.id.topDivider);
+    pageIndicator = findViewById(R.id.pageIndicator);
+    topBatteryProgress = findViewById(R.id.topBatteryProgress);
+    topBatteryStatus = findViewById(R.id.topBatteryStatus);
     // 记录原始字体，供"系统默认"选项恢复（必须在 applyCustomFont 之前）
     defaultLargeClockTimeTypeface = largeClockTime.getTypeface();
     defaultLargeClockDateTypeface = largeClockDate.getTypeface();
@@ -520,6 +536,8 @@ public class Launcher extends AppCompatActivity
     });
     dataCenter.setAdapter(adapter);
     dataCenter.setHideApps(config.getHideApps());
+    dataCenter.setDockApps(config.getDockApps());
+    setupDock();
 
     // 翻页按钮
     findViewById(R.id.lastPage).setOnClickListener(new View.OnClickListener() {
@@ -553,6 +571,13 @@ public class Launcher extends AppCompatActivity
     });
     // 电池点击打开设置
     batteryProgress.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        clearKeyboardFocus();
+        openBatterySettings();
+      }
+    });
+    topBatteryProgress.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
         clearKeyboardFocus();
@@ -748,22 +773,127 @@ public class Launcher extends AppCompatActivity
     }
   }
 
-  private void applyGridSize(int colNum, int rowNum) {
-    int displayColNum = colNum;
-    int displayRowNum = rowNum;
-    if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
-      displayColNum = rowNum;
-      displayRowNum = colNum;
+  // =========================================================================
+  // Dock
+  // =========================================================================
+
+  private void setupDock() {
+    int[] slotIds = { R.id.dockSlot0, R.id.dockSlot1, R.id.dockSlot2, R.id.dockSlot3 };
+    for (int i = 0; i < DOCK_SIZE; i++) {
+      final int slot = i;
+      ViewGroup slotView = findViewById(slotIds[i]);
+      if (slotView == null) continue;
+      View item = LayoutInflater.from(this).inflate(R.layout.dock_item, slotView, false);
+      item.setOnClickListener(new View.OnClickListener() {
+        @Override public void onClick(View v) { onDockClick(slot); }
+      });
+      item.setOnLongClickListener(new View.OnLongClickListener() {
+        @Override public boolean onLongClick(View v) {
+          onDockLongClick(slot);
+          return true;
+        }
+      });
+      slotView.removeAllViews();
+      slotView.addView(item);
+      dockSlotViews[i] = item;
     }
+    refreshDock();
+  }
+
+  private void refreshDock() {
+    if (binder == null || dataCenter == null) return;
+    List<String> keys = config.getDockApps();
+    Map<String, ResolveInfo> all = new HashMap<>();
+    for (ResolveInfo info : dataCenter.getAllAppsForDock()) {
+      all.put(AppDataCenter.componentKey(info), info);
+    }
+    for (int i = 0; i < DOCK_SIZE; i++) {
+      View item = dockSlotViews[i];
+      if (item == null) continue;
+      ImageView icon = (ImageView) item.findViewById(R.id.dockItemIcon);
+      TextView label = (TextView) item.findViewById(R.id.dockItemLabel);
+      String key = i < keys.size() ? keys.get(i) : "";
+      ResolveInfo info = key.length() > 0 ? all.get(key) : null;
+      dockInfos[i] = info;
+      if (info == null) {
+        icon.setImageDrawable(null);
+        label.setText("");
+        continue;
+      }
+      binder.bindDockIcon(icon, info, config.isShowCustomIcon());
+      label.setText(binder.getDockLabel(info));
+    }
+  }
+
+  private void onDockClick(int slot) {
+    ResolveInfo info = dockInfos[slot];
+    if (info == null) return;
+    clearKeyboardFocus();
+    onItemClick(info);
+  }
+
+  private void onDockLongClick(final int slot) {
+    final ResolveInfo info = dockInfos[slot];
+    if (info == null || binder == null) return;
+    CharSequence label = binder.getDockLabel(info);
+    new AlertDialog.Builder(this)
+        .setTitle(label)
+        .setMessage(R.string.dock_remove)
+        .setPositiveButton(R.string.dock_remove, new DialogInterface.OnClickListener() {
+          @Override
+          public void onClick(DialogInterface dialog, int which) {
+            removeAppFromDock(AppDataCenter.componentKey(info));
+          }
+        })
+        .setNegativeButton(android.R.string.cancel, null)
+        .show();
+  }
+
+  public boolean addAppToDock(String componentKey, int slot) {
+    if (componentKey == null || slot < 0 || slot > 3) return false;
+    if (config.getDockApps().contains(componentKey)) {
+      config.removeDockApp(componentKey);
+    }
+    if (!config.addDockApp(componentKey, slot)) return false;
+    refreshDock();
+    dataCenter.setDockApps(config.getDockApps());
+    Toast.makeText(this, R.string.dock_added, Toast.LENGTH_SHORT).show();
+    return true;
+  }
+
+  public boolean removeAppFromDock(String componentKey) {
+    if (!config.removeDockApp(componentKey)) return false;
+    refreshDock();
+    dataCenter.setDockApps(config.getDockApps());
+    Toast.makeText(this, R.string.dock_removed, Toast.LENGTH_SHORT).show();
+    return true;
+  }
+
+  @Override
+  public boolean addToDock(String componentKey, int slot) {
+    return addAppToDock(componentKey, slot);
+  }
+
+  @Override
+  public boolean removeFromDock(String componentKey) {
+    return removeAppFromDock(componentKey);
+  }
+
+  public List<ResolveInfo> getDockCandidates() {
+    return dataCenter != null ? dataCenter.getAllAppsForDock() : new ArrayList<ResolveInfo>();
+  }
+
+  public List<String> getDockSlots() {
+    return config.getDockApps();
+  }
+
+  private void applyGridSize(int colNum, int rowNum) {
     if (launcherView != null) {
-      boolean firstPageClock = config.isShowLargeClock()
-          && dataCenter != null && dataCenter.getPageIndex() == 0;
-      int gridRows = firstPageClock ? Math.max(1, displayRowNum - 2) : displayRowNum;
-      launcherView.configure(displayColNum, gridRows, config.isHideDivider());
+      launcherView.configure(colNum, 2, config.isHideDivider());
     }
     if (dataCenter != null) {
-      dataCenter.setGridSize(displayColNum, displayRowNum);
-      dataCenter.setLargeClockEnabled(config.isShowLargeClock());
+      dataCenter.setGridSize(colNum, 2);
+      dataCenter.setLargeClockEnabled(true);
     }
     if (dataCenter != null) {
       applyCurrentPageLayout();
@@ -775,29 +905,65 @@ public class Launcher extends AppCompatActivity
 
   private void applyCurrentPageLayout() {
     int cols = config.getColNum();
-    int rows = config.getRowNum();
-    int displayCols = cols;
-    int displayRows = rows;
-    if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
-      displayCols = rows;
-      displayRows = cols;
-    }
-    boolean firstPageClock = config.isShowLargeClock() && dataCenter.getPageIndex() == 0;
-    int gridRows = firstPageClock ? Math.max(1, displayRows - 2) : displayRows;
-    launcherView.configure(displayCols, gridRows, config.isHideDivider());
-      launcherView.setBottomAlignIcons(config.isBottomAlignIcons());
-    boolean clockOnlyPage = firstPageClock && displayRows < 3;
-    launcherView.setVisibility(clockOnlyPage ? View.GONE : View.VISIBLE);
+    // 新版桌面图标区固定两行，多余应用进入后续页面
+    launcherView.configure(cols, 2, config.isHideDivider());
+    launcherView.setBottomAlignIcons(false);
+    launcherView.setVisibility(View.VISIBLE);
+
     ViewGroup.LayoutParams clockParams = largeClockContainer.getLayoutParams();
     clockParams.height = 0;
     clockParams.width = ViewGroup.LayoutParams.MATCH_PARENT;
-    ((LinearLayout.LayoutParams) clockParams).weight = firstPageClock ? 2f : 0f;
-    largeClockContainer.setVisibility(firstPageClock ? View.VISIBLE : View.GONE);
+    ((LinearLayout.LayoutParams) clockParams).weight = 3f;
+    largeClockContainer.setVisibility(View.VISIBLE);
+
     ViewGroup.LayoutParams gridParams = launcherView.getLayoutParams();
-    ((LinearLayout.LayoutParams) gridParams).weight = clockOnlyPage ? 0f : firstPageClock
-        ? gridRows : 1f;
+    ((LinearLayout.LayoutParams) gridParams).weight = 4f;
     launcherView.setLayoutParams(gridParams);
+
+    updatePageIndicator();
+    updateTopDividerWidth();
     updateFooterFocus();
+  }
+
+  /** 用实心/空心圆点显示桌面页数，替代原来的页数文字 */
+  private void updatePageIndicator() {
+    if (pageIndicator == null || dataCenter == null) return;
+    int count = dataCenter.getPageCount();
+    int current = dataCenter.getPageIndex();
+    if (count < 1) count = 1;
+    if (pageIndicator.getChildCount() != count) {
+      pageIndicator.removeAllViews();
+      for (int i = 0; i < count; i++) {
+        TextView dot = new TextView(this);
+        dot.setTextSize(TypedValue.COMPLEX_UNIT_PX, 22f);
+        dot.setTextColor(getResources().getColor(R.color.textColor));
+        dot.setPadding(9, 0, 9, 0);
+        pageIndicator.addView(dot);
+      }
+    }
+    for (int i = 0; i < count; i++) {
+      TextView dot = (TextView) pageIndicator.getChildAt(i);
+      dot.setText(i == current ? "●" : "○");
+    }
+  }
+
+  /** 上分隔线宽度跟随年月日星期文字宽度 */
+  private void updateTopDividerWidth() {
+    if (topDivider == null || largeClockDate == null) return;
+    largeClockDate.post(new Runnable() {
+      @Override
+      public void run() {
+        CharSequence text = largeClockDate.getText();
+        if (text == null || text.length() == 0) return;
+        int width = (int) Math.ceil(largeClockDate.getPaint().measureText(text.toString()));
+        if (width <= 0) return;
+        ViewGroup.LayoutParams params = topDivider.getLayoutParams();
+        if (params.width != width) {
+          params.width = width;
+          topDivider.setLayoutParams(params);
+        }
+      }
+    });
   }
 
   private void updateLargeClockLayout() {
@@ -856,7 +1022,10 @@ public class Launcher extends AppCompatActivity
   public void onItemClick(ResolveInfo info) {
     String pkgName = info.activityInfo.packageName;
 
-    if (AppDataCenter.LOCK_PACKAGE_NAME.equals(pkgName)) {
+    if (AppDataCenter.SETTINGS_PACKAGE_NAME.equals(pkgName)) {
+      clearKeyboardFocus();
+      openSettingsFragment();
+    } else if (AppDataCenter.LOCK_PACKAGE_NAME.equals(pkgName)) {
       lockScreen();
     } else if (AppDataCenter.WIFI_PACKAGE_NAME.equals(pkgName)) {
       WifiControl.onClickWifiItem();
@@ -878,7 +1047,9 @@ public class Launcher extends AppCompatActivity
   public void onItemLongClick(View anchor, ResolveInfo info) {
     String packageName = info.activityInfo.packageName;
 
-    if (AppDataCenter.LOCK_PACKAGE_NAME.equals(packageName)) {
+    if (AppDataCenter.SETTINGS_PACKAGE_NAME.equals(packageName)) {
+      openSettingsFragment();
+    } else if (AppDataCenter.LOCK_PACKAGE_NAME.equals(packageName)) {
       showPowerMenu();
     } else if (AppDataCenter.WIFI_PACKAGE_NAME.equals(packageName)) {
       WifiControl.onLongClickWifiItem();
@@ -1018,14 +1189,13 @@ public class Launcher extends AppCompatActivity
     }
     String weekdayText = new SimpleDateFormat("EEEE", locale).format(calendar.getTime());
 
-    boolean showLargeClock = config != null && config.isShowLargeClock();
-    largeClockContainer.setVisibility(showLargeClock && dataCenter != null
-        && dataCenter.getPageIndex() == 0 ? View.VISIBLE : View.GONE);
+    largeClockContainer.setVisibility(View.VISIBLE);
     largeClockTime.setText(plainTimeText);
     largeClockDate.setText(new SimpleDateFormat("yyyy年M月d日 E", locale).format(calendar.getTime()));
     updateLargeClockTextSize();
+    updateTopDividerWidth();
     updateFooterLayout(dateText, shortDateText, plainTimeText, timeText, weekdayText);
-    textClock.setVisibility(showLargeClock ? View.GONE : View.VISIBLE);
+    textClock.setVisibility(View.GONE);
   }
 
   private void updateFooterLayout(String dateText, String shortDateText,
@@ -1080,7 +1250,6 @@ public class Launcher extends AppCompatActivity
 
     textClock.setText(visibleClockText);
     batteryContainer.setVisibility(View.VISIBLE);
-    pageStatus.setVisibility(View.VISIBLE);
     batteryStatus.setVisibility(showBatteryStatus ? View.VISIBLE : View.GONE);
   }
 
@@ -1179,6 +1348,7 @@ public class Launcher extends AppCompatActivity
 
     int level = (rawLevel >= 0 && scale > 0) ? (rawLevel * 100) / scale : -1;
     batteryProgress.setProgress(level);
+    topBatteryProgress.setProgress(level);
     batteryStatusRequestedVisible = true;
 
     if (BatteryManager.BATTERY_HEALTH_OVERHEAT == health) {
@@ -1209,6 +1379,12 @@ public class Launcher extends AppCompatActivity
         batteryStatus.setText(R.string.battery_wtf);
         break;
     }
+    if (batteryStatusRequestedVisible) {
+      topBatteryStatus.setText(batteryStatus.getText());
+    } else {
+      topBatteryStatus.setText(level >= 0 ? level + "%" : "");
+    }
+    topBatteryStatus.setVisibility(View.VISIBLE);
     updateTimeShow();
   }
 

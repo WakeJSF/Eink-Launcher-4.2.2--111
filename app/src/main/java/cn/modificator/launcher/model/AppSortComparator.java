@@ -118,7 +118,8 @@ public class AppSortComparator implements Comparator<ResolveInfo> {
     return AppDataCenter.LOCK_PACKAGE_NAME.equals(pkg)
         || AppDataCenter.WIFI_PACKAGE_NAME.equals(pkg)
         || AppDataCenter.CLEAR_PACKAGE_NAME.equals(pkg)
-        || AppDataCenter.REFRESH_PACKAGE_NAME.equals(pkg);
+        || AppDataCenter.REFRESH_PACKAGE_NAME.equals(pkg)
+        || AppDataCenter.SETTINGS_PACKAGE_NAME.equals(pkg);
   }
 
   private int compareByName(ResolveInfo a, ResolveInfo b) {

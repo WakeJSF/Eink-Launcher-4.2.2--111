@@ -36,6 +36,8 @@ public class AppDataCenter {
   public static final String CLEAR_PACKAGE_NAME = "E-ink_Launcher.Clear";
   /** 虚拟包名：一键全屏刷新入口 */
   public static final String REFRESH_PACKAGE_NAME = "E-ink_Launcher.Refresh";
+  /** 虚拟包名：设置入口（作为桌面图标显示） */
+  public static final String SETTINGS_PACKAGE_NAME = "E-ink_Launcher.Settings";
 
   private final Context mContext;
   private final List<ResolveInfo> mApps = new ArrayList<>();
@@ -53,6 +55,9 @@ public class AppDataCenter {
   private int pageCount = 0;
   private int colNum = 5;
   private int rowNum = 5;
+  /** 新版桌面图标区固定两行 */
+  private static final int PAGE_ROWS = 2;
+  private final Set<String> dockApps = new HashSet<>();
   private boolean largeClockEnabled;
   private LauncherAdapter adapter;
   private AppItemBinder binder;
@@ -130,9 +135,40 @@ public class AppDataCenter {
 
   public void setGridSize(int colNum, int rowNum) {
     this.colNum = colNum;
-    this.rowNum = rowNum;
+    this.rowNum = PAGE_ROWS;
     updatePageCount();
     setPageShow();
+  }
+
+  /** 更新 Dock 中的应用，这些应用不再占用桌面分页 */
+  public void setDockApps(List<String> componentKeys) {
+    this.dockApps.clear();
+    if (componentKeys != null) {
+      for (String key : componentKeys) {
+        if (key != null && key.length() > 0) this.dockApps.add(key);
+      }
+    }
+    refreshAppList(false);
+  }
+
+  public int getPageCount() {
+    return pageCount + 1;
+  }
+
+  /** 供设置页使用的完整应用列表（含虚拟功能图标，不含设置入口） */
+  public List<ResolveInfo> getAllAppsForDock() {
+    List<ResolveInfo> apps = loadAppsSnapshot(true, new HashSet<String>(), sortMode);
+    List<ResolveInfo> result = new ArrayList<>();
+    for (ResolveInfo info : apps) {
+      if (SETTINGS_PACKAGE_NAME.equals(info.activityInfo.packageName)) continue;
+      result.add(info);
+    }
+    return result;
+  }
+
+  public static String componentKey(ResolveInfo info) {
+    if (info == null || info.activityInfo == null) return "";
+    return info.activityInfo.packageName + "/" + info.activityInfo.name;
   }
 
   // =========================================================================
@@ -231,57 +267,57 @@ public class AppDataCenter {
       if (!showAll && "cn.modificator.launcher.Launcher".equals(resolveInfo.activityInfo.name)) {
         continue;
       }
+      if (!showAll && dockApps.contains(componentKey(resolveInfo))) {
+        continue;
+      }
       if (showAll || !hiddenPackages.contains(packageName)) {
         apps.add(resolveInfo);
       }
     }
-
-    if (showAll || !hiddenPackages.contains(LOCK_PACKAGE_NAME)) {
+    if (!showAll) {
+      List<ResolveInfo> dockOnly = new ArrayList<>();
+      if (!hiddenPackages.contains(LOCK_PACKAGE_NAME)) dockOnly.add(createPowerIcon());
+      if (!hiddenPackages.contains(WIFI_PACKAGE_NAME)) dockOnly.add(createWifiIcon());
+      if (!hiddenPackages.contains(CLEAR_PACKAGE_NAME)) dockOnly.add(createClearIcon());
+      if (!hiddenPackages.contains(REFRESH_PACKAGE_NAME)) dockOnly.add(createRefreshIcon());
+      for (ResolveInfo info : dockOnly) {
+        if (!dockApps.contains(componentKey(info))) apps.add(info);
+      }
+    } else {
       apps.add(createPowerIcon());
-    }
-    if (showAll || !hiddenPackages.contains(WIFI_PACKAGE_NAME)) {
       apps.add(createWifiIcon());
-    }
-    if (showAll || !hiddenPackages.contains(CLEAR_PACKAGE_NAME)) {
       apps.add(createClearIcon());
-    }
-    if (showAll || !hiddenPackages.contains(REFRESH_PACKAGE_NAME)) {
       apps.add(createRefreshIcon());
     }
+    apps.add(createSettingsIcon());
     sortApps(apps, packageManager, requestSortMode);
     return apps;
   }
 
   private void setPageShow() {
     if (adapter == null || pageStatus == null) return;
-    int itemCount = colNum * rowNum;
+    int itemCount = colNum * PAGE_ROWS;
     if (itemCount <= 0) return;
-    int firstPageCount = getFirstPageItemCount();
-    int pageStart = pageIndex == 0 ? 0 : firstPageCount + (pageIndex - 1) * itemCount;
-    int pageCapacity = pageIndex == 0 ? firstPageCount : itemCount;
-    int pageEnd = Math.min(pageStart + pageCapacity, mApps.size());
+    int pageStart = pageIndex * itemCount;
+    int pageEnd = Math.min(pageStart + itemCount, mApps.size());
     adapter.setAppList(mApps.subList(pageStart, pageEnd));
     pageStatus.setText((pageIndex + 1) + "/" + (pageCount + 1));
   }
 
   private void updatePageCount() {
-    int itemCount = colNum * rowNum;
+    int itemCount = colNum * PAGE_ROWS;
     if (itemCount <= 0) {
       pageCount = 0;
       pageIndex = 0;
       return;
     }
-    int firstPageCount = getFirstPageItemCount();
-    int remaining = Math.max(0, mApps.size() - firstPageCount);
+    int remaining = Math.max(0, mApps.size() - itemCount);
     pageCount = remaining == 0 ? 0 : 1 + (remaining - 1) / itemCount;
     pageIndex = Math.min(pageIndex, pageCount);
   }
 
   private int getFirstPageItemCount() {
-    if (!largeClockEnabled) return colNum * rowNum;
-    if (rowNum < 3) return 0;
-    int firstPageRows = Math.max(1, rowNum - 2);
-    return Math.min(colNum * firstPageRows, colNum * rowNum);
+    return colNum * PAGE_ROWS;
   }
 
   private void sortApps(List<ResolveInfo> apps, PackageManager packageManager, int requestSortMode) {
@@ -328,6 +364,14 @@ public class AppDataCenter {
     resolveInfo.icon = R.drawable.ic_full_refresh;
     resolveInfo.activityInfo = new ActivityInfo();
     resolveInfo.activityInfo.packageName = REFRESH_PACKAGE_NAME;
+    return resolveInfo;
+  }
+
+  private ResolveInfo createSettingsIcon() {
+    ResolveInfo resolveInfo = new ResolveInfo();
+    resolveInfo.icon = R.drawable.navibar_icon_settings_highlight;
+    resolveInfo.activityInfo = new ActivityInfo();
+    resolveInfo.activityInfo.packageName = SETTINGS_PACKAGE_NAME;
     return resolveInfo;
   }
 }

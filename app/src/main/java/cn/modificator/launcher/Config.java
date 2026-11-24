@@ -3,7 +3,9 @@ package cn.modificator.launcher;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -32,6 +34,7 @@ public class Config {
   public static final String KEY_BOTTOM_ALIGN_ICONS = "launcherBottomAlignIcons";
   public static final String KEY_SCREEN_ORIENTATION = "launcherScreenOrientation";
   public static final String KEY_START_AT_BOOT = "launcherStartAtBoot";
+  public static final String KEY_DOCK_APPS = "launcherDockApps";
 
   // ---- 默认值 ----
   private static final int DEFAULT_COL_NUM = 5;
@@ -74,6 +77,8 @@ public class Config {
   private int screenOrientation = -1;
   private final Set<String> hideApps = new HashSet<>();
   private boolean hideAppsLoaded = false;
+  private final List<String> dockApps = new ArrayList<>();
+  private boolean dockAppsLoaded = false;
 
   public Config(Context context) {
     this.prefs = context.getSharedPreferences(PREFS_FILE, Context.MODE_PRIVATE);
@@ -307,6 +312,68 @@ public class Config {
   public void setStartAtBoot(boolean startAtBoot) {
     this.startAtBoot = startAtBoot;
     prefs.edit().putBoolean(KEY_START_AT_BOOT, startAtBoot).apply();
+  }
+
+  // ---- Dock 槽位（按槽位顺序保存组件键 pkg/activity，最多 4 个） ----
+
+  public synchronized List<String> getDockApps() {
+    ensureDockAppsLoaded();
+    return new ArrayList<>(dockApps);
+  }
+
+  public synchronized void setDockApps(List<String> apps) {
+    dockApps.clear();
+    if (apps != null) {
+      for (String app : apps) {
+        if (app != null && app.length() > 0) dockApps.add(app);
+        if (dockApps.size() >= 4) break;
+      }
+    }
+    dockAppsLoaded = true;
+    persistDockApps();
+  }
+
+  /** 把应用放入指定槽位（0-3），槽位已有应用时返回 false */
+  public synchronized boolean addDockApp(String componentKey, int slot) {
+    ensureDockAppsLoaded();
+    if (componentKey == null || componentKey.length() == 0 || slot < 0 || slot > 3) return false;
+    if (dockApps.contains(componentKey)) return false;
+    while (dockApps.size() <= slot) dockApps.add("");
+    if (dockApps.get(slot).length() > 0) return false;
+    dockApps.set(slot, componentKey);
+    persistDockApps();
+    return true;
+  }
+
+  public synchronized boolean removeDockApp(String componentKey) {
+    ensureDockAppsLoaded();
+    int index = dockApps.indexOf(componentKey);
+    if (index < 0) return false;
+    dockApps.set(index, "");
+    persistDockApps();
+    return true;
+  }
+
+  private void persistDockApps() {
+    StringBuilder builder = new StringBuilder();
+    for (int i = 0; i < dockApps.size(); i++) {
+      if (i > 0) builder.append('|');
+      builder.append(dockApps.get(i));
+    }
+    prefs.edit().putString(KEY_DOCK_APPS, builder.toString()).apply();
+  }
+
+  private void ensureDockAppsLoaded() {
+    if (!dockAppsLoaded) {
+      String saved = prefs.getString(KEY_DOCK_APPS, "");
+      if (saved != null && saved.length() > 0) {
+        String[] parts = saved.split("\\|", -1);
+        for (String part : parts) {
+          dockApps.add(part == null ? "" : part);
+        }
+      }
+      dockAppsLoaded = true;
+    }
   }
 
   // ---- 应用名行数 ----
