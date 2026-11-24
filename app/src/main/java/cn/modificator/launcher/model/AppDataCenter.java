@@ -58,6 +58,7 @@ public class AppDataCenter {
   /** 新版桌面图标区固定两行 */
   private static final int PAGE_ROWS = 2;
   private final Set<String> dockApps = new HashSet<>();
+  private OnPageInfoChangedListener pageInfoChangedListener;
   private boolean largeClockEnabled;
   private LauncherAdapter adapter;
   private AppItemBinder binder;
@@ -153,6 +154,15 @@ public class AppDataCenter {
 
   public int getPageCount() {
     return pageCount + 1;
+  }
+
+  /** 分页数据变化回调，用于刷新页面小点 */
+  public interface OnPageInfoChangedListener {
+    void onPageInfoChanged(int pageIndex, int pageCount);
+  }
+
+  public void setOnPageInfoChangedListener(OnPageInfoChangedListener listener) {
+    this.pageInfoChangedListener = listener;
   }
 
   /** 供设置页使用的完整应用列表（含虚拟功能图标，不含设置入口） */
@@ -291,6 +301,18 @@ public class AppDataCenter {
     }
     apps.add(createSettingsIcon());
     sortApps(apps, packageManager, requestSortMode);
+    // 设置入口固定在第一页最后一格，方便随时进入
+    ResolveInfo settingsIcon = null;
+    for (ResolveInfo info : apps) {
+      if (SETTINGS_PACKAGE_NAME.equals(info.activityInfo.packageName)) {
+        settingsIcon = info;
+        break;
+      }
+    }
+    if (settingsIcon != null) {
+      apps.remove(settingsIcon);
+      apps.add(Math.min(9, apps.size()), settingsIcon);
+    }
     return apps;
   }
 
@@ -302,6 +324,9 @@ public class AppDataCenter {
     int pageEnd = Math.min(pageStart + itemCount, mApps.size());
     adapter.setAppList(mApps.subList(pageStart, pageEnd));
     pageStatus.setText((pageIndex + 1) + "/" + (pageCount + 1));
+    if (pageInfoChangedListener != null) {
+      pageInfoChangedListener.onPageInfoChanged(pageIndex, pageCount);
+    }
   }
 
   private void updatePageCount() {

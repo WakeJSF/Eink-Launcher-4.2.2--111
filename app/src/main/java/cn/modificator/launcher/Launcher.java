@@ -537,6 +537,12 @@ public class Launcher extends AppCompatActivity
     dataCenter.setAdapter(adapter);
     dataCenter.setHideApps(config.getHideApps());
     dataCenter.setDockApps(config.getDockApps());
+    dataCenter.setOnPageInfoChangedListener(new AppDataCenter.OnPageInfoChangedListener() {
+      @Override
+      public void onPageInfoChanged(int pageIndex, int pageCount) {
+        updatePageIndicator();
+      }
+    });
     setupDock();
 
     // 翻页按钮
