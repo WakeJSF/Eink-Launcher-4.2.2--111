@@ -502,9 +502,9 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
     final List<String> labels = new ArrayList<String>();
     PackageManager pm = activity.getPackageManager();
     for (ResolveInfo info : apps) {
-      CharSequence label = info.loadLabel(pm);
+      CharSequence label = AppDataCenter.getSafeLabel(info, activity, pm);
       labels.add(label != null && label.length() > 0
-          ? label.toString() : info.activityInfo.packageName);
+          ? label.toString() : (info.activityInfo != null ? info.activityInfo.packageName : ""));
     }
     ArrayAdapter<String> adapter = new ArrayAdapter<String>(activity,
         android.R.layout.simple_list_item_1, labels);
@@ -536,10 +536,13 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
     final List<String> slots = listener.getDockSlots();
     List<ResolveInfo> candidates = listener.getDockCandidates();
     Map<String, String> names = new HashMap<String, String>();
+    PackageManager pm = activity.getPackageManager();
     for (ResolveInfo candidate : candidates) {
-      CharSequence label = candidate.loadLabel(activity.getPackageManager());
+      CharSequence label = AppDataCenter.getSafeLabel(candidate, activity, pm);
       names.put(AppDataCenter.componentKey(candidate),
-          label != null && label.length() > 0 ? label.toString() : candidate.activityInfo.packageName);
+          label != null && label.length() > 0
+              ? label.toString()
+              : (candidate.activityInfo != null ? candidate.activityInfo.packageName : ""));
     }
     final boolean canRemove = slots.contains(key);
     String[] items = new String[canRemove ? 5 : 4];

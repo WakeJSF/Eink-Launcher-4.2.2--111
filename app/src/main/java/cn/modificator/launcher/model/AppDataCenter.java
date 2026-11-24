@@ -181,6 +181,36 @@ public class AppDataCenter {
     return info.activityInfo.packageName + "/" + info.activityInfo.name;
   }
 
+  /**
+   * 安全获取应用标签。虚拟功能项的 ResolveInfo 只有 packageName、没有 applicationInfo，
+   * 直接调用 loadLabel() 会在 Android 4.x 上抛 NullPointerException，必须在这里拦截。
+   * 使用 context.getString() 读取本应用资源，避免 applicationId 与 namespace 不一致导致取不到字符串。
+   */
+  public static CharSequence getSafeLabel(ResolveInfo info, Context context, PackageManager pm) {
+    if (info == null || info.activityInfo == null) return "";
+    String pkg = info.activityInfo.packageName;
+    if (pkg == null) return "";
+    if (LOCK_PACKAGE_NAME.equals(pkg)) {
+      return context.getString(R.string.item_lockscreen);
+    }
+    if (CLEAR_PACKAGE_NAME.equals(pkg)) {
+      return context.getString(R.string.item_clear);
+    }
+    if (REFRESH_PACKAGE_NAME.equals(pkg)) {
+      return context.getString(R.string.item_refresh);
+    }
+    if (SETTINGS_PACKAGE_NAME.equals(pkg)) {
+      return context.getString(R.string.item_settings);
+    }
+    if (WIFI_PACKAGE_NAME.equals(pkg)) return "WiFi";
+    try {
+      CharSequence label = info.loadLabel(pm);
+      return label != null && label.length() > 0 ? label : pkg;
+    } catch (Throwable t) {
+      return pkg;
+    }
+  }
+
   // =========================================================================
   // 排序
   // =========================================================================

@@ -508,7 +508,7 @@ public class Launcher extends AppCompatActivity
     // 配置 Binder、Adapter、View
     iconCache = new IconCache(this);
     fontManager = new FontManager();
-    binder = new AppItemBinder(getPackageManager());
+    binder = new AppItemBinder(this);
     binder.setCallback(this);
     binder.setIconCache(iconCache);
     binder.setHideAppPkg(config.getHideApps());

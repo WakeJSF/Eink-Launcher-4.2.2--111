@@ -1,5 +1,6 @@
 package cn.modificator.launcher.widgets;
 
+import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
@@ -65,6 +66,7 @@ public class AppItemBinder {
   // =========================================================================
 
   private final PackageManager packageManager;
+  private final Context context;
   private final Set<String> hideAppPkg = new HashSet<>();
   private final Handler mainHandler = new Handler(Looper.getMainLooper());
   private final ExecutorService iconLoadExecutor = Executors.newSingleThreadExecutor(new ThreadFactory() {
@@ -93,8 +95,9 @@ public class AppItemBinder {
   // 构造器
   // =========================================================================
 
-  public AppItemBinder(PackageManager pm) {
-    this.packageManager = pm;
+  public AppItemBinder(Context context) {
+    this.context = context;
+    this.packageManager = context.getPackageManager();
   }
 
   // =========================================================================
@@ -217,19 +220,15 @@ public class AppItemBinder {
   public CharSequence getDockLabel(ResolveInfo info) {
     if (info == null || info.activityInfo == null) return "";
     String pkg = info.activityInfo.packageName;
-    if (AppDataCenter.LOCK_PACKAGE_NAME.equals(pkg)) {
-      return packageManager.getText("cn.modificator.launcher", R.string.item_lockscreen, null);
+    // 虚拟项统一走安全 helper：用 context.getString 读取本应用资源，
+    // 避免旧代码 getText("cn.modificator.launcher",...) 与 applicationId 不符导致空标签。
+    if (AppDataCenter.LOCK_PACKAGE_NAME.equals(pkg)
+        || AppDataCenter.CLEAR_PACKAGE_NAME.equals(pkg)
+        || AppDataCenter.REFRESH_PACKAGE_NAME.equals(pkg)
+        || AppDataCenter.SETTINGS_PACKAGE_NAME.equals(pkg)
+        || AppDataCenter.WIFI_PACKAGE_NAME.equals(pkg)) {
+      return AppDataCenter.getSafeLabel(info, context, packageManager);
     }
-    if (AppDataCenter.CLEAR_PACKAGE_NAME.equals(pkg)) {
-      return packageManager.getText("cn.modificator.launcher", R.string.item_clear, null);
-    }
-    if (AppDataCenter.REFRESH_PACKAGE_NAME.equals(pkg)) {
-      return packageManager.getText("cn.modificator.launcher", R.string.item_refresh, null);
-    }
-    if (AppDataCenter.SETTINGS_PACKAGE_NAME.equals(pkg)) {
-      return packageManager.getText("cn.modificator.launcher", R.string.item_settings, null);
-    }
-    if (AppDataCenter.WIFI_PACKAGE_NAME.equals(pkg)) return "WiFi";
     return iconCache != null
         ? iconCache.getLabel(pkg, info, packageManager)
         : info.loadLabel(packageManager);
