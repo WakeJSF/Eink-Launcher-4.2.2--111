@@ -163,8 +163,11 @@ public class EInkLauncherView extends ViewGroup {
     swipeThreshold = Math.min(w, h) / 6f;
     int cellW = w / colNum;
     int cellH = h / rowNum;
+    int rowH = getRowHeight(cellW, cellH);
     int startLeft = getPaddingLeft();
     int startTop = getPaddingTop();
+    // 两行模式：把压缩后的两行整体居中，缩小行与行之间的空白
+    int contentTop = (rowH < cellH) ? startTop + (h - rowH * rowNum) / 2 : startTop;
     int itemCount = adapter != null ? adapter.getItemCount() : 0;
     int leadingEmpty = bottomAlignIcons ? Math.max(0, rowNum * colNum - itemCount) : 0;
 
@@ -173,8 +176,8 @@ public class EInkLauncherView extends ViewGroup {
       int row = visualIndex / colNum;
       int col = visualIndex % colNum;
       getChildAt(index).layout(
-          startLeft + col * cellW, startTop + row * cellH,
-          startLeft + (col + 1) * cellW, startTop + (row + 1) * cellH);
+          startLeft + col * cellW, contentTop + row * rowH,
+          startLeft + (col + 1) * cellW, contentTop + (row + 1) * rowH);
     }
   }
 
@@ -188,11 +191,23 @@ public class EInkLauncherView extends ViewGroup {
     int h = measuredHeight - getPaddingTop() - getPaddingBottom();
     if (w <= 0 || h <= 0) return;
 
-    int cellWSpec = makeMeasureSpec(w / colNum, EXACTLY);
-    int cellHSpec = makeMeasureSpec(h / rowNum, EXACTLY);
+    int cellW = w / colNum;
+    int rowH = getRowHeight(cellW, h / rowNum);
+    int cellWSpec = makeMeasureSpec(cellW, EXACTLY);
+    int cellHSpec = makeMeasureSpec(rowH, EXACTLY);
     for (int i = 0; i < getChildCount(); i++) {
       getChildAt(i).measure(cellWSpec, cellHSpec);
     }
+  }
+
+  /**
+   * 两行桌面模式下压缩行高，避免图标区上下两行之间留白过大。
+   * 单行或旧的底部对齐模式保持原有整格高度，不影响历史设置。
+   */
+  private int getRowHeight(int cellW, int cellH) {
+    if (rowNum != 2 || bottomAlignIcons) return cellH;
+    int compact = (int) (cellW * 1.4f);
+    return compact > 0 && compact < cellH ? compact : cellH;
   }
 
   private int getAdjustedWidth() {

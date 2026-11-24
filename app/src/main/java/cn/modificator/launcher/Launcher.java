@@ -95,7 +95,6 @@ public class Launcher extends AppCompatActivity
   private View topDivider;
   private LinearLayout pageIndicator;
   private BatteryView topBatteryProgress;
-  private TextView topBatteryStatus;
   private static final int DOCK_SIZE = 4;
   private final View[] dockSlotViews = new View[DOCK_SIZE];
   private final ResolveInfo[] dockInfos = new ResolveInfo[DOCK_SIZE];
@@ -466,7 +465,6 @@ public class Launcher extends AppCompatActivity
     topDivider = findViewById(R.id.topDivider);
     pageIndicator = findViewById(R.id.pageIndicator);
     topBatteryProgress = findViewById(R.id.topBatteryProgress);
-    topBatteryStatus = findViewById(R.id.topBatteryStatus);
     // 记录原始字体，供"系统默认"选项恢复（必须在 applyCustomFont 之前）
     defaultLargeClockTimeTypeface = largeClockTime.getTypeface();
     defaultLargeClockDateTypeface = largeClockDate.getTypeface();
@@ -777,6 +775,8 @@ public class Launcher extends AppCompatActivity
         getExternalCacheDir() != null, config.isShowCustomIcon())) {
       adapter.refreshDisplay();
     }
+    // Dock 使用独立的 ImageView，不会随网格刷新，需单独重绑一次图标
+    refreshDock();
   }
 
   // =========================================================================
@@ -834,7 +834,16 @@ public class Launcher extends AppCompatActivity
   private void onDockClick(int slot) {
     ResolveInfo info = dockInfos[slot];
     if (info == null) return;
-    clearKeyboardFocus();
+    String pkg = info.activityInfo.packageName;
+    boolean virtualItem = AppDataCenter.SETTINGS_PACKAGE_NAME.equals(pkg)
+        || AppDataCenter.LOCK_PACKAGE_NAME.equals(pkg)
+        || AppDataCenter.WIFI_PACKAGE_NAME.equals(pkg)
+        || AppDataCenter.CLEAR_PACKAGE_NAME.equals(pkg)
+        || AppDataCenter.REFRESH_PACKAGE_NAME.equals(pkg);
+    // 虚拟功能项（尤其是全刷）直接响应，跳过焦点/选中态重绘，避免墨水屏上多一次刷新造成延迟
+    if (!virtualItem) {
+      clearKeyboardFocus();
+    }
     onItemClick(info);
   }
 
@@ -1385,12 +1394,7 @@ public class Launcher extends AppCompatActivity
         batteryStatus.setText(R.string.battery_wtf);
         break;
     }
-    if (batteryStatusRequestedVisible) {
-      topBatteryStatus.setText(batteryStatus.getText());
-    } else {
-      topBatteryStatus.setText(level >= 0 ? level + "%" : "");
-    }
-    topBatteryStatus.setVisibility(View.VISIBLE);
+    // 右上角电量只显示 BatteryView 圆圈内的百分比，不再额外显示一行文字
     updateTimeShow();
   }
 

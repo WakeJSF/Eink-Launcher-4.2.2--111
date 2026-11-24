@@ -54,8 +54,10 @@ public final class EpdRefresh {
 
     // 第一优先：本设备(Boyue T80S)确认可用的 View.byFullRefresh() 隐藏方法
     boolean boyueOk = tryBoyueViewFullRefresh();
-    int sent = sendRefreshBroadcasts(activity);
-    boolean sdkOk = tryVendorSdk(activity);
+    // 本机 Boyue 硬件接口已确认可用：跳过广播和反射扫描。
+    // 5 次同步广播会让 UI 线程阻塞，Dock 全刷点击后延迟明显；硬件刷新本身已足够。
+    int sent = boyueOk ? 0 : sendRefreshBroadcasts(activity);
+    boolean sdkOk = boyueOk ? false : tryVendorSdk(activity);
 
     // 若前面没有一条确切成功的硬件刷新路径，再叠加闪屏兜底，确保肉眼可见一次刷新。
     // Boyue 专用方法成功时不叠加，避免全刷过程中被黑层二次干扰。

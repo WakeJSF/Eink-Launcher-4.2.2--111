@@ -102,7 +102,8 @@
     <string name="clean_start">开始清理…</string>
     <string name="clean_error">清理出错：%s</string>
     <string name="clean_done">已清理：%s</string>
-    <string name="item_settings">设置</string>
+    <string name="item_settings">桌面设置</string>
+    <string name="item_refresh">全刷</string>
     <string name="dock_manager_title">Dock 应用管理</string>
     <string name="dock_add_to">添加到 Dock</string>
     <string name="dock_remove">从 Dock 移出</string>

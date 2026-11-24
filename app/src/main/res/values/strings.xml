@@ -73,7 +73,7 @@
     <string name="item_lockscreen">Lock Screen</string>
     <string name="item_clear">Memory Clean</string>
     <string name="item_refresh">Full Refresh</string>
-    <string name="item_settings">Settings</string>
+    <string name="item_settings">Desktop Settings</string>
     <string name="dock_manager_title">Dock apps</string>
     <string name="dock_add_to">Add to Dock</string>
     <string name="dock_remove">Remove from Dock</string>

@@ -212,7 +212,9 @@ public class AppItemBinder {
     } else if (AppDataCenter.SETTINGS_PACKAGE_NAME.equals(pkg)) {
       loadIcon(iv, pkg, R.drawable.navibar_icon_settings_highlight, customIcons);
     } else {
-      loadIcon(iv, componentKey(info), info, customIcons);
+      // 自定义图标映射按包名索引（与主网格一致）；缓存键仍用组件名，保持两者缓存共享。
+      // 之前这里传 componentKey 去查 map，永远匹配不到文件名，导致 Dock 不显示自定义图标。
+      loadIcon(iv, pkg, info, customIcons);
     }
   }
 
