@@ -35,10 +35,6 @@
     <string name="wallpaper_picker_unavailable">사용 가능한 파일 관리자가 없습니다</string>
     <string name="wallpaper_not_supported">이 기기에서는 배경화면 변경을 지원하지 않습니다</string>
     <string name="wallpaper_not_allowed">이 기기에서는 배경화면 변경이 허용되지 않습니다</string>
-    <string name="setting_cloud_manager_off">클라우드 관리자 - 꺼짐</string>
-    <string name="setting_cloud_manager_on">클라우드 관리자 - 켜짐</string>
-    <string name="setting_cloud_manager_wifi_off">"클라우드 관리자
- &#8212; WiFi 연결 없음"</string>
     <string name="setting_column_icons">열</string>
     <string name="setting_help_and_about">도움말 &amp; 정보</string>
     <string name="setting_hide_divider">구분선 숨김</string>

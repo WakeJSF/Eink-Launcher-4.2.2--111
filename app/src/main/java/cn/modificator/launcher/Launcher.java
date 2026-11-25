@@ -56,8 +56,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import cn.modificator.launcher.ftpservice.FTPReceiver;
-import cn.modificator.launcher.ftpservice.FTPService;
 import cn.modificator.launcher.model.AdminReceiver;
 import cn.modificator.launcher.model.AppDataCenter;
 import cn.modificator.launcher.model.HomeEntranceService;
@@ -146,11 +144,9 @@ public class Launcher extends AppCompatActivity
   private static final int FOCUS_LARGE_CLOCK = 5;
 
   // ---- Receivers ----
-  private FTPReceiver ftpReceiver = new FTPReceiver();
   private boolean batteryRegistered;
   private boolean timeRegistered;
   private boolean usbRegistered;
-  private boolean ftpRegistered;
   private boolean settingsChangedRegistered;
 
   private final BroadcastReceiver settingsChangedReceiver = new BroadcastReceiver() {
@@ -1472,12 +1468,6 @@ public class Launcher extends AppCompatActivity
     if (!usbRegistered) {
       registerUsbReceiver();
     }
-    if (!ftpRegistered) {
-      IntentFilter ftpFilter = new IntentFilter(FTPService.ACTION_START_FTPSERVER);
-      ftpFilter.addAction(FTPService.ACTION_STOP_FTPSERVER);
-      registerCompatReceiver(ftpReceiver, ftpFilter);
-      ftpRegistered = true;
-    }
   }
 
   private void unregisterDynamicReceivers() {
@@ -1497,10 +1487,6 @@ public class Launcher extends AppCompatActivity
     if (usbRegistered) {
       unregisterReceiver(usbReceiver);
       usbRegistered = false;
-    }
-    if (ftpRegistered) {
-      unregisterReceiver(ftpReceiver);
-      ftpRegistered = false;
     }
   }
 

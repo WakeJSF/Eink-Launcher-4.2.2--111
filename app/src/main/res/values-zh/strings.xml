@@ -72,9 +72,6 @@
         <item>关机</item>
         <item>重启</item>
     </string-array>
-    <string name="setting_cloud_manager_on">网络传书 （开）</string>
-    <string name="setting_cloud_manager_off">网络传书 （关）</string>
-    <string name="setting_cloud_manager_wifi_off">网络传书 （请连接WIFI）</string>
     <string name="setting_help_and_about">帮助 &amp; 关于</string>
     <string name="path">路径</string>
     <string name="default_path_setting">设置默认路径</string>

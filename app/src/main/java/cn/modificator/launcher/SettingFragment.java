@@ -1,26 +1,19 @@
 package cn.modificator.launcher;
 
-import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
 import android.app.WallpaperManager;
 import android.content.ActivityNotFoundException;
-import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
@@ -38,7 +31,6 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
-import cn.modificator.launcher.ftpservice.FTPService;
 import cn.modificator.launcher.model.AppDataCenter;
 import cn.modificator.launcher.model.AppSortComparator;
 import cn.modificator.launcher.model.FontManager;
@@ -62,7 +54,6 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
 
   private static final String TAG = "SettingFragment";
   private static final int REQUEST_PICK_WALLPAPER = 10003;
-  private static final int REQUEST_FTP_STORAGE_PERMISSION = 10004;
   private static final Handler MAIN_HANDLER = new Handler(Looper.getMainLooper());
   private static final ExecutorService WALLPAPER_EXECUTOR =
       Executors.newSingleThreadExecutor(new ThreadFactory() {
@@ -108,8 +99,6 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
   private SeekBar fontControl;
   private View rootView;
   private TextView hideDivider;
-  private TextView ftpAddr;
-  private TextView ftpStatus;
   private TextView showStatusBar;
   private TextView showCustomIcon;
   private TextView clockShowSeconds;
@@ -126,8 +115,6 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
   private View deleteApp;
   private View dockManager;
   private View helpAbout;
-  private View menuFtp;
-  private boolean waitingForFtpStorageAccess;
   private View openDeviceManager;
   private View setWallpaper;
   private View showWifiName;
@@ -168,7 +155,6 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
     initViews();
     initSpinners();
     initFontControl();
-    updateFtpStatus();
   }
 
   // =========================================================================
@@ -186,7 +172,7 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
     for (int i = 0; i < menu.getChildCount(); i++) {
       View child = menu.getChildAt(i);
       int id = child.getId();
-      if (id == R.id.menu_ftp || id == R.id.toBack1) {
+      if (id == R.id.toBack1) {
         child.setVisibility(View.GONE);
       } else if (id == View.NO_ID && !(child instanceof ViewGroup)) {
         // 原竖排分隔线，分列后不再需要
@@ -232,8 +218,6 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
     bottomAlignIcons = rootView.findViewById(R.id.bottomAlignIcons);
     startAtBoot = rootView.findViewById(R.id.startAtBoot);
     showWifiName = rootView.findViewById(R.id.showWifiName);
-    ftpStatus = rootView.findViewById(R.id.ftp_status);
-    ftpAddr = rootView.findViewById(R.id.ftp_addr);
     hideDivider = rootView.findViewById(R.id.hideDivider);
     fontControl = rootView.findViewById(R.id.font_control);
     colNumSpinner = rootView.findViewById(R.id.col_num_spinner);
@@ -250,7 +234,6 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
     deleteApp = rootView.findViewById(R.id.deleteApp);
     dockManager = rootView.findViewById(R.id.dockManager);
     helpAbout = rootView.findViewById(R.id.helpAbout);
-    menuFtp = rootView.findViewById(R.id.menu_ftp);
     openDeviceManager = rootView.findViewById(R.id.openDeviceManager);
     setWallpaper = rootView.findViewById(R.id.setWallpaper);
 
@@ -329,8 +312,7 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
         themeModeSpinner,
         setWallpaper,
         openDeviceManager,
-        helpAbout,
-        menuFtp
+        helpAbout
     };
 
     for (View item : menuItems) {
@@ -506,8 +488,6 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
       handleClockFont();
     } else if (id == R.id.hideDivider) {
       handleToggleDivider();
-    } else if (id == R.id.menu_ftp) {
-      handleFtp();
     } else if (id == R.id.showWifiName) {
       handleShowWifiName();
     } else if (id == R.id.showCustomIcon) {
@@ -701,65 +681,6 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
           }
         })
         .show();
-  }
-
-  private void handleFtp() {
-    if (FTPService.isRunning()) {
-      stopFtpServer();
-      return;
-    }
-    if (!FTPService.isConnectedToWifi(getActivity())) {
-      Toast.makeText(getActivity(), "大哥诶，麻烦先把WIFI连上吧", Toast.LENGTH_SHORT).show();
-      return;
-    }
-    if (hasFtpStorageAccess()) {
-      startFtpServer();
-    } else {
-      requestFtpStorageAccess();
-    }
-  }
-
-  private boolean hasFtpStorageAccess() {
-    Activity activity = getActivity();
-    if (activity == null) return false;
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-      return Environment.isExternalStorageManager();
-    }
-    return Build.VERSION.SDK_INT < Build.VERSION_CODES.M
-        || activity.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-        == PackageManager.PERMISSION_GRANTED;
-  }
-
-  private void requestFtpStorageAccess() {
-    Activity activity = getActivity();
-    if (activity == null) return;
-
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-      Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
-          Uri.parse("package:" + activity.getPackageName()));
-      waitingForFtpStorageAccess = true;
-      try {
-        Log.i(TAG, "Opening app all files access settings");
-        startActivity(intent);
-      } catch (ActivityNotFoundException | SecurityException e) {
-        try {
-          Log.i(TAG, "Opening all files access settings list");
-          startActivity(new Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION));
-        } catch (ActivityNotFoundException | SecurityException unavailable) {
-          waitingForFtpStorageAccess = false;
-          Log.e(TAG, "All files access settings are unavailable", unavailable);
-          Toast.makeText(activity, "无法打开所有文件访问权限设置", Toast.LENGTH_SHORT).show();
-        }
-      }
-      return;
-    }
-
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-          requestPermissions(new String[] {
-              Manifest.permission.READ_EXTERNAL_STORAGE,
-              Manifest.permission.WRITE_EXTERNAL_STORAGE
-          }, REQUEST_FTP_STORAGE_PERMISSION);
-      }
   }
 
   private void handleShowWifiName() {
@@ -959,13 +880,7 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
   @Override
   public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
     super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-    if (requestCode == REQUEST_FTP_STORAGE_PERMISSION) {
-      if (hasFtpStorageAccess()) {
-        startFtpServer();
-      } else if (getActivity() != null) {
-        Toast.makeText(getActivity(), "需要存储权限才能启动网络传书", Toast.LENGTH_SHORT).show();
-      }
-    } else if (requestCode == 10002) {
+    if (requestCode == 10002) {
       WifiControl.reloadWifiName();
       closeSettings();
     }
@@ -975,113 +890,4 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
   // 生命周期
   // =========================================================================
 
-  @Override
-  public void onResume() {
-    super.onResume();
-    if (waitingForFtpStorageAccess) {
-      waitingForFtpStorageAccess = false;
-      if (hasFtpStorageAccess()) {
-        startFtpServer();
-      } else if (getActivity() != null) {
-        Toast.makeText(getActivity(), "需要所有文件访问权限才能启动网络传书", Toast.LENGTH_SHORT).show();
-      }
-    }
-    updateFtpStatus();
-
-    IntentFilter wifiFilter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
-    Utils.registerReceiverCompat(getActivity(), wifiReceiver, wifiFilter);
-
-    IntentFilter ftpFilter = new IntentFilter();
-    ftpFilter.addAction(FTPService.ACTION_STARTED);
-    ftpFilter.addAction(FTPService.ACTION_STOPPED);
-    ftpFilter.addAction(FTPService.ACTION_FAILEDTOSTART);
-    Utils.registerReceiverCompat(getActivity(), ftpReceiver, ftpFilter);
-  }
-
-  @Override
-  public void onPause() {
-    super.onPause();
-    getActivity().unregisterReceiver(wifiReceiver);
-    getActivity().unregisterReceiver(ftpReceiver);
-  }
-
-  // =========================================================================
-  // FTP 控制
-  // =========================================================================
-
-  private void startFtpServer() {
-    Activity activity = getActivity();
-    if (activity == null) return;
-    Log.i(TAG, "FTP service start requested");
-    Intent service = new Intent(activity, FTPService.class);
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-      activity.startForegroundService(service);
-    } else {
-      activity.startService(service);
-    }
-    updateFtpStatus();
-  }
-
-  private void stopFtpServer() {
-    Activity activity = getActivity();
-    if (activity == null) return;
-    Log.i(TAG, "FTP service stop requested");
-    activity.stopService(new Intent(activity, FTPService.class));
-    updateFtpStatus();
-  }
-
-  private void updateFtpStatus() {
-    if (FTPService.isConnectedToWifi(getActivity())) {
-      if (FTPService.isRunning()) {
-        ftpStatus.setText(R.string.setting_cloud_manager_on);
-        ftpAddr.setVisibility(View.VISIBLE);
-        String address = getFTPAddressString();
-        if (address != null) {
-          ftpAddr.setText(address);
-        } else {
-          ftpAddr.setVisibility(View.GONE);
-        }
-      } else {
-        ftpStatus.setText(R.string.setting_cloud_manager_off);
-        ftpAddr.setVisibility(View.GONE);
-      }
-    } else {
-      ftpStatus.setText(R.string.setting_cloud_manager_wifi_off);
-      ftpAddr.setVisibility(View.GONE);
-    }
-  }
-
-  private String getFTPAddressString() {
-    java.net.InetAddress address = FTPService.getLocalInetAddress(getActivity());
-    if (address == null) {
-      return null;
-    }
-    return "ftp://" + address.getHostAddress() + ":" + FTPService.getPort();
-  }
-
-  // =========================================================================
-  // 广播接收器
-  // =========================================================================
-
-  private final BroadcastReceiver wifiReceiver = new BroadcastReceiver() {
-    @Override
-    public void onReceive(Context context, Intent intent) {
-      ConnectivityManager conMan = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-      NetworkInfo netInfo = conMan.getActiveNetworkInfo();
-      if (netInfo == null || netInfo.getType() != ConnectivityManager.TYPE_WIFI) {
-        stopFtpServer();
-      }
-      updateFtpStatus();
-    }
-  };
-
-  private final BroadcastReceiver ftpReceiver = new BroadcastReceiver() {
-    @Override
-    public void onReceive(Context context, Intent intent) {
-      if (FTPService.ACTION_FAILEDTOSTART.equals(intent.getAction())) {
-        Toast.makeText(getActivity(), "网络传书启动失败", Toast.LENGTH_SHORT).show();
-      }
-      updateFtpStatus();
-    }
-  };
 }

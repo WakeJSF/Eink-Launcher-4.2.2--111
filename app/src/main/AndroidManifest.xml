@@ -8,7 +8,6 @@
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.SET_WALLPAPER" />
 
-    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
@@ -18,8 +17,6 @@
     <uses-permission android:name="android.permission.DELETE_PACKAGES"/>
     <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"/>
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" />
     <uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
@@ -70,12 +67,6 @@
             android:name="app_description_content"
             android:resource="@string/uninstall_tip" />
 
-        <service
-            android:name=".ftpservice.FTPService"
-            android:enabled="true"
-            android:exported="true"
-            android:foregroundServiceType="dataSync" />
-
         <receiver
             android:name=".model.AdminReceiver"
             android:permission="android.permission.BIND_DEVICE_ADMIN" android:exported="true">
@@ -86,11 +77,6 @@
                 <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
             </intent-filter>
         </receiver>
-        <receiver
-            android:name=".ftpservice.FTPReceiver"
-            android:exported="false">
-        </receiver>
-
         <receiver
             android:name=".BootReceiver"
             android:exported="false">
