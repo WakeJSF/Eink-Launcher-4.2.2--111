@@ -186,6 +186,8 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
     menu.removeAllViews();
     menu.setOrientation(LinearLayout.HORIZONTAL);
     final int columns = 3;
+    // 所有选项统一行高，保证三列的分隔线横向对齐
+    final int rowHeight = getResources().getDimensionPixelSize(R.dimen.menu_item_height);
     for (int c = 0; c < columns; c++) {
       LinearLayout column = new LinearLayout(getActivity());
       column.setOrientation(LinearLayout.VERTICAL);
@@ -193,10 +195,8 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
           0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
       for (int i = c; i < items.size(); i += columns) {
         View item = items.get(i);
-        int height = item.getLayoutParams() != null
-            ? item.getLayoutParams().height : ViewGroup.LayoutParams.WRAP_CONTENT;
         column.addView(item, new LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, height));
+            ViewGroup.LayoutParams.MATCH_PARENT, rowHeight));
         // 每个选项之间加一条分隔线，末尾不留多余线条
         if (i + columns < items.size()) {
           column.addView(newDivider(), new LinearLayout.LayoutParams(

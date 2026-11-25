@@ -608,7 +608,7 @@ public class Launcher extends AppCompatActivity
   // =========================================================================
   // SettingFragment.OnSettingChangeListener 实现
   // =========================================================================
-  
+
   /** 广播动作：设置已更改，需要刷新UI */
   public static final String ACTION_SETTINGS_CHANGED = "cn.modificator.launcher.ACTION_SETTINGS_CHANGED";
 
@@ -694,6 +694,9 @@ public class Launcher extends AppCompatActivity
 
   @Override
   public void onShowCustomIconChanged(boolean show) {
+    // 设置页持有自己的 Config 实例；必须同步回 Launcher 的实例，
+    // 否则 refreshIcons() 仍按旧的开关值扫描，必须重启才生效。
+    config.setShowCustomIcon(show);
     iconCache.markDirty();
     iconCache.clearIconCache();
     refreshIcons();
