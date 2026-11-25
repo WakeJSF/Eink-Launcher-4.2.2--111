@@ -176,7 +176,7 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
       if (id == R.id.toBack1) {
         child.setVisibility(View.GONE);
       } else if (id == View.NO_ID && !(child instanceof ViewGroup)) {
-        // 原竖排分隔线，分列后不再需要
+        // 原竖排分隔线不再复用，分列后统一重建
         child.setVisibility(View.GONE);
       } else {
         items.add(child);
@@ -197,9 +197,20 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
             ? item.getLayoutParams().height : ViewGroup.LayoutParams.WRAP_CONTENT;
         column.addView(item, new LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, height));
+        // 每个选项之间加一条分隔线，末尾不留多余线条
+        if (i + columns < items.size()) {
+          column.addView(newDivider(), new LinearLayout.LayoutParams(
+              ViewGroup.LayoutParams.MATCH_PARENT, Utils.dp2Px(getActivity(), 1)));
+        }
       }
       menu.addView(column);
     }
+  }
+
+  private View newDivider() {
+    View divider = new View(getActivity());
+    divider.setBackgroundColor(0xff000000);
+    return divider;
   }
 
   private void initViews() {

@@ -42,7 +42,7 @@ public class AboutDialog {
 
     TextView authorInfo = new TextView(context);
 
-    authorInfo.setText("原作者：Modificator\n修改者：漂浮版\n\n本版本基于 Modificator 的原作 E-Ink Launcher，\n以及郑羊羊（zyyme）的「咩E-Ink Launcher」修改版制作。\n感谢两位作者的开发与分享。");
+    authorInfo.setText("原作者：Modificator\n修改者：漂浮\n\n本版本基于 Modificator 的原作 E-Ink Launcher，\n以及郑羊羊（zyyme）的「咩E-Ink Launcher」修改版制作。\n感谢两位作者的开发与分享。");
     authorInfo.setTextSize(16);
     authorInfo.setTextColor(0xff000000);
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
