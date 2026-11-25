@@ -76,17 +76,13 @@ public class CrashDetailPage extends Activity {
     });
 
     tvContent.setText("");
-    String title = "Oh! It's Crashed.";
+    String title = "桌面发生异常";
     SpannableString titleSpan = new SpannableString(title);
     titleSpan.setSpan(new AbsoluteSizeSpan(25, true), 0, title.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
     tvContent.append(titleSpan);
     tvContent.append("\nーーーーーーーーーーーーーーーーーーーー\n");
-    tvContent.append("Please screenshot and give me feedback.\n");
-    tvContent.append("哔哩哔哩/微信公众号：郑羊羊\n");
-    tvContent.append("酷安：zyyme\n");
-    tvContent.append("Github issues : https://github.com/zanjie1999/E-Ink-Launcher\n");
-    tvContent.append("well it's already open source\n");
-    tvContent.append("Thanks.");
+    tvContent.append("请截图反馈以下问题。\n");
+    tvContent.append("错误详情：\n");
     tvContent.append("\nーーーーーーーーーーーーーーーーーーーー\n");
 
     if (getIntent().hasExtra("crashFile")) {
