@@ -1,5 +1,6 @@
 package cn.modificator.launcher;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import androidx.fragment.app.Fragment;
