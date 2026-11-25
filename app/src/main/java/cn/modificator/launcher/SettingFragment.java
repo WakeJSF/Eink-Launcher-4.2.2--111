@@ -284,20 +284,26 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
     updateClockFontLabel();
   }
 
-  /** 更新"App 名字体"项的副标题：显示当前字体名或"系统默认" */
+  /** 更新"App 名字体"项的副标题：仅选过字体时显示字体名，系统默认时隐藏 */
   private void updateCustomFontLabel() {
     if (customFontLabel == null) return;
     String name = config.getCustomFont();
-    customFontLabel.setText(name == null || name.length() == 0
-        ? getString(R.string.font_system_default) : name);
+    boolean hasCustomFont = name != null && name.length() > 0;
+    customFontLabel.setVisibility(hasCustomFont ? View.VISIBLE : View.GONE);
+    if (hasCustomFont) {
+      customFontLabel.setText(name);
+    }
   }
 
-  /** 更新"大时钟字体"项的副标题：显示当前字体名或"系统默认" */
+  /** 更新"大时钟字体"项的副标题：仅选过字体时显示字体名，系统默认时隐藏 */
   private void updateClockFontLabel() {
     if (clockFontLabel == null) return;
     String name = config.getClockFont();
-    clockFontLabel.setText(name == null || name.length() == 0
-        ? getString(R.string.font_system_default) : name);
+    boolean hasCustomFont = name != null && name.length() > 0;
+    clockFontLabel.setVisibility(hasCustomFont ? View.VISIBLE : View.GONE);
+    if (hasCustomFont) {
+      clockFontLabel.setText(name);
+    }
   }
 
   private void initDpadFocus(View toBack, View btnHideFontControl) {
