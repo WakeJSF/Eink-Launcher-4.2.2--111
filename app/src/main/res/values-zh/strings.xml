@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">咩E-Ink Launcher</string>
+    <string name="app_name">E-ink Launcher漂浮版</string>
     <string name="file_manager">文件浏览</string>
 
     <string name="empty_directory_hint">空文件夹</string>
@@ -49,6 +49,8 @@
     <string name="dialog_copy_package_name">复制包名 %s</string>
     <string name="package_name_copied">包名已复制</string>
     <string name="dialog_hide">隐藏</string>
+    <string name="dialog_add_to_dock">固定到 Dock 栏</string>
+    <string name="dialog_remove_from_dock">从 Dock 栏移出</string>
     <string name="dialog_uninstall">卸载</string>
     <string name="dialog_pkg_name">包名: %s</string>
     <string name="dialog_close">关闭</string>

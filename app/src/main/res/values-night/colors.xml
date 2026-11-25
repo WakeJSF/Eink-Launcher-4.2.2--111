@@ -4,6 +4,9 @@
     <color name="textColor">#ffffff</color>
     <color name="mainBgColor">#4D000000</color>
     <color name="menuBgColor">#B3000000</color>
+    <!-- 设置面板：遮罩与不透明面板底色（深色主题） -->
+    <color name="settingsScrimColor">#99FFFFFF</color>
+    <color name="settingsPanelColor">#FF000000</color>
     <color name="focusColor">#ffffff</color>
     <color name="dividerColor">#ffffff</color>
     <color name="batteryTrackColor">#666666</color>

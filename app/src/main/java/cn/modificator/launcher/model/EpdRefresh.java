@@ -33,8 +33,10 @@ public final class EpdRefresh {
   private static final Handler MAIN = new Handler(Looper.getMainLooper());
 
   /** 国产墨水屏常见的强制全刷广播（不同 ROM 支持其一即可） */
+  private static final String BOYUE_ACTION = "com.by.android.refresh.start";
+
   private static final String[] REFRESH_ACTIONS = new String[] {
-      "com.by.android.refresh.start",          // Boyue/Boeye 原厂桌面全刷广播（本机确认存在）
+      BOYUE_ACTION,                            // Boyue/Boeye 原厂桌面全刷广播（本机确认存在）
       "android.eink.force.refresh",
       "android.intent.action.EPD_FULL_REFRESH",
       "com.yotadevices.intent.action.EPD_REFRESH",
@@ -54,10 +56,17 @@ public final class EpdRefresh {
 
     // 第一优先：本设备(Boyue T80S)确认可用的 View.byFullRefresh() 隐藏方法
     boolean boyueOk = tryBoyueViewFullRefresh();
-    // 本机 Boyue 硬件接口已确认可用：跳过广播和反射扫描。
-    // 5 次同步广播会让 UI 线程阻塞，Dock 全刷点击后延迟明显；硬件刷新本身已足够。
-    int sent = boyueOk ? 0 : sendRefreshBroadcasts(activity);
+    // byFullRefresh() 只是把下一次屏幕更新切到全刷模式，本身不会主动产生一次绘制，
+    // 所以必须发本机原厂那条广播来触发实际刷新；其余 4 条广播跳过以避免 UI 阻塞。
+    int sent = sendRefreshBroadcasts(activity, boyueOk);
     boolean sdkOk = boyueOk ? false : tryVendorSdk(activity);
+
+    // 额外请求一次重绘，确保即使广播未被接收也能在下一次绘制时使用全刷模式
+    try {
+      View decor = activity.getWindow().getDecorView();
+      if (decor != null) decor.invalidate();
+    } catch (Throwable ignored) {
+    }
 
     // 若前面没有一条确切成功的硬件刷新路径，再叠加闪屏兜底，确保肉眼可见一次刷新。
     // Boyue 专用方法成功时不叠加，避免全刷过程中被黑层二次干扰。
@@ -118,9 +127,11 @@ public final class EpdRefresh {
   }
 
   /** 发送全刷广播，返回成功发送的条数 */
-  private static int sendRefreshBroadcasts(Context context) {
+  private static int sendRefreshBroadcasts(Context context, boolean boyueOk) {
     int sent = 0;
     for (String action : REFRESH_ACTIONS) {
+      // Boyue 硬件路径已生效时只发本机原厂那一条，兼顾“立即刷新”与“响应快”
+      if (boyueOk && !BOYUE_ACTION.equals(action)) continue;
       try {
         Intent intent = new Intent(action);
         intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);

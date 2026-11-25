@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">咩E-Ink Launcher</string>
+    <string name="app_name">E-ink Launcher Floating Edition</string>
     <string name="settings">Settings</string>
     <string name="file_manager">File Manager</string>
     <string name="uninstall_tip" translatable="false">卸载将丢失所有的设置，\n请确保您已备份！\n\n遇到问题请到Github中提issues\nhttps://github.com/zanjie1999/E-Ink-Launcher\n\n或者到B站私信郑羊羊\n\n本程序为开源项目，如果你是花钱购买的，或是付费安装的，请申请退款并举报，禁止任何程度的商业用途，使用请遵守 咩License\n\n本条提示利用漏洞安全的实现，\n以提升用户体验</string>
@@ -55,6 +55,8 @@
     <string name="dialog_copy_package_name">Copy package name %s</string>
     <string name="package_name_copied">Package name copied</string>
     <string name="dialog_hide">Hide</string>
+    <string name="dialog_add_to_dock">Pin to Dock</string>
+    <string name="dialog_remove_from_dock">Remove from Dock</string>
     <string name="dialog_uninstall">Uninstall</string>
     <string name="dialog_pkg_name">Package Name: %s</string>
     <string name="dialog_close">Close</string>

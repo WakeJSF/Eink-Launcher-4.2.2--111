@@ -30,6 +30,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -174,7 +175,48 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
   // 初始化
   // =========================================================================
 
+  /**
+   * 把原来右侧竖排的设置项平铺为上半屏三列。
+   * 只重排视图、不改动任何 ID，原有点击逻辑无需调整。
+   */
+  private void tileSettingsMenu() {
+    LinearLayout menu = (LinearLayout) rootView.findViewById(R.id.menuList);
+    if (menu == null) return;
+    List<View> items = new ArrayList<View>();
+    for (int i = 0; i < menu.getChildCount(); i++) {
+      View child = menu.getChildAt(i);
+      int id = child.getId();
+      if (id == R.id.menu_ftp || id == R.id.toBack1) {
+        child.setVisibility(View.GONE);
+      } else if (id == View.NO_ID && !(child instanceof ViewGroup)) {
+        // 原竖排分隔线，分列后不再需要
+        child.setVisibility(View.GONE);
+      } else {
+        items.add(child);
+      }
+    }
+    if (items.isEmpty()) return;
+    menu.removeAllViews();
+    menu.setOrientation(LinearLayout.HORIZONTAL);
+    final int columns = 3;
+    for (int c = 0; c < columns; c++) {
+      LinearLayout column = new LinearLayout(getActivity());
+      column.setOrientation(LinearLayout.VERTICAL);
+      column.setLayoutParams(new LinearLayout.LayoutParams(
+          0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+      for (int i = c; i < items.size(); i += columns) {
+        View item = items.get(i);
+        int height = item.getLayoutParams() != null
+            ? item.getLayoutParams().height : ViewGroup.LayoutParams.WRAP_CONTENT;
+        column.addView(item, new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, height));
+      }
+      menu.addView(column);
+    }
+  }
+
   private void initViews() {
+    tileSettingsMenu();
     View toBack = rootView.findViewById(R.id.toBack);
     View btnHideFontControl = rootView.findViewById(R.id.btnHideFontControl);
 
@@ -227,7 +269,6 @@ public class SettingFragment extends Fragment implements View.OnClickListener {
     deleteApp.setOnClickListener(this);
     dockManager.setOnClickListener(this);
     helpAbout.setOnClickListener(this);
-    menuFtp.setOnClickListener(this);
     openDeviceManager.setOnClickListener(this);
     setWallpaper.setOnClickListener(this);
 

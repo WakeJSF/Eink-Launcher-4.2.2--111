@@ -1131,9 +1131,12 @@ public class Launcher extends AppCompatActivity
         .show();
   }
 
-  private void showAppInfoDialog(ResolveInfo info, final String packageName) {
+  private void showAppInfoDialog(final ResolveInfo info, final String packageName) {
+    final String key = AppDataCenter.componentKey(info);
+    final boolean inDock = config.getDockApps().contains(key);
     CharSequence[] actions = {
         getString(R.string.dialog_app_info),
+        inDock ? getString(R.string.dialog_remove_from_dock) : getString(R.string.dialog_add_to_dock),
         getString(R.string.dialog_copy_package_name, packageName),
         getString(R.string.dialog_hide),
         getString(R.string.dialog_uninstall)
@@ -1149,6 +1152,12 @@ public class Launcher extends AppCompatActivity
                   Uri.parse("package:" + packageName));
               startActivity(intent);
             } else if (which == 1) {
+              if (inDock) {
+                removeAppFromDock(key);
+              } else {
+                showDockSlotChooser(info);
+              }
+            } else if (which == 2) {
               ClipboardManager clipboard = (ClipboardManager)
                   getSystemService(Context.CLIPBOARD_SERVICE);
               if (clipboard != null) {
@@ -1156,14 +1165,14 @@ public class Launcher extends AppCompatActivity
                 Toast.makeText(Launcher.this, R.string.package_name_copied,
                     Toast.LENGTH_SHORT).show();
               }
-            } else if (which == 2) {
+            } else if (which == 3) {
               Set<String> hideApps = binder.getHideAppPkg();
               if (!hideApps.add(packageName)) {
                 hideApps.remove(packageName);
               }
               config.setHideApps(new HashSet<>(hideApps));
               dataCenter.setHideApps(config.getHideApps());
-            } else if (which == 3) {
+            } else if (which == 4) {
               Intent deleteIntent = new Intent(Intent.ACTION_DELETE,
                   Uri.parse("package:" + packageName));
               startActivity(deleteIntent);
@@ -1171,6 +1180,41 @@ public class Launcher extends AppCompatActivity
           }
         })
         .setNegativeButton(R.string.dialog_cancel, null)
+        .show();
+  }
+
+  /** 长按桌面 App 后直接选择 Dock 槽位，无需进入设置页 */
+  private void showDockSlotChooser(final ResolveInfo info) {
+    final String key = AppDataCenter.componentKey(info);
+    List<String> slots = config.getDockApps();
+    Map<String, String> names = new HashMap<String, String>();
+    for (ResolveInfo candidate : dataCenter.getAllAppsForDock()) {
+      CharSequence label = AppDataCenter.getSafeLabel(candidate, this, getPackageManager());
+      names.put(AppDataCenter.componentKey(candidate),
+          label != null && label.length() > 0 ? label.toString() : "");
+    }
+    String[] items = new String[4];
+    for (int i = 0; i < 4; i++) {
+      String occupied = i < slots.size() ? slots.get(i) : "";
+      if (occupied == null || occupied.length() == 0) {
+        items[i] = (i + 1) + ". " + getString(R.string.dock_empty_slot);
+      } else {
+        String name = names.get(occupied);
+        items[i] = (i + 1) + ". " + (name != null && name.length() > 0 ? name : occupied);
+      }
+    }
+    CharSequence label = AppDataCenter.getSafeLabel(info, this, getPackageManager());
+    new AlertDialog.Builder(this)
+        .setTitle(getString(R.string.dock_add_to) + ": " + (label != null ? label : key))
+        .setItems(items, new DialogInterface.OnClickListener() {
+          @Override
+          public void onClick(DialogInterface dialog, int which) {
+            if (!addAppToDock(key, which)) {
+              Toast.makeText(Launcher.this, R.string.dock_slot_full, Toast.LENGTH_SHORT).show();
+            }
+          }
+        })
+        .setNegativeButton(android.R.string.cancel, null)
         .show();
   }
 

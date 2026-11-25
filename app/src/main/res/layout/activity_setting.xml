@@ -7,6 +7,13 @@
     android:clickable="true">
     <!--android:background="#aaffffff"-->
 
+    <!-- 半透明遮罩：压暗桌面背景，让上半屏选项更清晰 -->
+    <View
+        android:id="@+id/settingsScrim"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/settingsScrimColor" />
+
     <!--  <LinearLayout
           android:layout_width="200dp"
           android:layout_height="wrap_content"
@@ -275,16 +282,20 @@
             android:src="@drawable/close_unclick" />
     </RelativeLayout>
 
+    <!-- 选项面板：平铺在上半屏，代码里会把条目分成三列 -->
     <ScrollView
-        android:layout_width="210dp"
-        android:layout_height="wrap_content"
-        android:layout_gravity="right|bottom"
-        android:layout_marginBottom="@dimen/menu_item_height"
-        android:background="@color/menuBgColor">
+        android:layout_width="match_parent"
+        android:layout_height="430dp"
+        android:layout_gravity="top|center_horizontal"
+        android:layout_marginLeft="12dp"
+        android:layout_marginRight="12dp"
+        android:layout_marginTop="30dp"
+        android:background="@color/settingsPanelColor"
+        android:padding="6dp">
 
         <LinearLayout
             android:id="@+id/menuList"
-            android:layout_width="210dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
@@ -837,6 +848,7 @@
                 android:visibility="gone" />
 
 
+            <!-- 网络传书已移除（原 FTP 服务在 Android 4.2 上本就不可用） -->
             <LinearLayout
                 android:id="@+id/menu_ftp"
                 android:layout_width="match_parent"
@@ -847,7 +859,8 @@
                 android:orientation="vertical"
                 android:paddingLeft="20dp"
                 android:paddingTop="10dp"
-                android:paddingBottom="10dp">
+                android:paddingBottom="10dp"
+                android:visibility="gone">
 
                 <TextView
                     android:id="@+id/ftp_status"
