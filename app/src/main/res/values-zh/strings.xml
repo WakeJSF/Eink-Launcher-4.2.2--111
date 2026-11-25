@@ -22,6 +22,8 @@
     <string name="setting_show_divider">显示分隔线</string>
     <string name="setting_hide_divider">隐藏分隔线</string>
     <string name="setting_set_font_size">设置字体大小</string>
+    <string name="setting_custom_font">app字体</string>
+    <string name="setting_clock_font">时钟字体</string>
     <string name="setting_apps_manager">管理应用</string>
     <string name="setting_open_device_manager">打开设备管理器</string>
     <string name="setting_set_wallpaper">设置壁纸</string>

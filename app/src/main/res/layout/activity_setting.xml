@@ -282,10 +282,10 @@
             android:src="@drawable/close_unclick" />
     </RelativeLayout>
 
-    <!-- 选项面板：平铺在上半屏，代码里会把条目分成三列 -->
+    <!-- 选项面板：平铺在上方，代码里会把条目分成三列；高度多留一些便于后续加选项 -->
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="430dp"
+        android:layout_height="520dp"
         android:layout_gravity="top|center_horizontal"
         android:layout_marginLeft="12dp"
         android:layout_marginRight="12dp"
