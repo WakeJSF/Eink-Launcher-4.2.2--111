@@ -89,7 +89,16 @@
     <string-array name="power_menu">
         <item>Power off</item>
         <item>Reboot</item>
+        <item>Reorder</item>
     </string-array>
+    <string name="dialog_reorder">Reorder</string>
+    <string name="reorder_first">Selected: %s. Tap another icon to swap.</string>
+    <string name="reorder_done">Moved: %s &lt;-&gt; %s</string>
+    <string name="reorder_cancelled">Reorder cancelled</string>
+    <string name="dialog_wifi_settings">Open Wi-Fi settings</string>
+    <string name="dialog_open_settings">Open desktop settings</string>
+    <string name="lock_admin_explanation">Device administrator is required for one-key lock. No password or policy changes will be made.</string>
+    <string name="lock_admin_failed">Device administrator is not enabled; cannot lock screen</string>
     <string name="power_title" translatable="false">现在可以操作电源了哦~</string>
     <string name="oh_no">混淆有毛用啊，文件这么少,代码渣貌似也能增加难度,不想加固，加固有问题，大哥我这就署名有价值，反编译别把我名字去了- -</string>
     <string name="come_on">给点赏钱吧，支付鸨就行，账号是邮箱</string>

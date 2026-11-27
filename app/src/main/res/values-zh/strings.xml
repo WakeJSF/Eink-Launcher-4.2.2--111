@@ -73,7 +73,16 @@
     <string-array name="power_menu">
         <item>关机</item>
         <item>重启</item>
+        <item>调整位置</item>
     </string-array>
+    <string name="dialog_reorder">调整位置</string>
+    <string name="reorder_first">已选中：%s，请点击要交换位置的应用</string>
+    <string name="reorder_done">位置已调整：%s ↔ %s</string>
+    <string name="reorder_cancelled">已取消调整</string>
+    <string name="dialog_wifi_settings">打开 Wi-Fi 设置</string>
+    <string name="dialog_open_settings">打开桌面设置</string>
+    <string name="lock_admin_explanation">需要启用设备管理器才能使用一键锁屏。启用后不会修改密码或其他安全策略。</string>
+    <string name="lock_admin_failed">设备管理器未启用，无法锁屏</string>
     <string name="setting_help_and_about">帮助 &amp; 关于</string>
     <string name="path">路径</string>
     <string name="default_path_setting">设置默认路径</string>

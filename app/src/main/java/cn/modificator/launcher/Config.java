@@ -35,6 +35,7 @@ public class Config {
   public static final String KEY_SCREEN_ORIENTATION = "launcherScreenOrientation";
   public static final String KEY_START_AT_BOOT = "launcherStartAtBoot";
   public static final String KEY_DOCK_APPS = "launcherDockApps";
+  public static final String KEY_APP_ORDER = "launcherAppOrder";
 
   // ---- 默认值 ----
   private static final int DEFAULT_COL_NUM = 5;
@@ -79,6 +80,7 @@ public class Config {
   private boolean hideAppsLoaded = false;
   private final List<String> dockApps = new ArrayList<>();
   private boolean dockAppsLoaded = false;
+  private String appOrder = "";
 
   public Config(Context context) {
     this.prefs = context.getSharedPreferences(PREFS_FILE, Context.MODE_PRIVATE);
@@ -92,6 +94,8 @@ public class Config {
     this.bottomAlignIcons = prefs.getBoolean(KEY_BOTTOM_ALIGN_ICONS, DEFAULT_BOTTOM_ALIGN_ICONS);
     this.startAtBoot = prefs.getBoolean(KEY_START_AT_BOOT, DEFAULT_START_AT_BOOT);
     this.appNameLines = prefs.getInt(KEY_APP_NAME_LINES, DEFAULT_APP_NAME_LINES);
+    String savedOrder = prefs.getString(KEY_APP_ORDER, "");
+    this.appOrder = savedOrder == null ? "" : savedOrder;
   }
 
   // ---- 列数 ----
@@ -400,5 +404,16 @@ public class Config {
     if (this.sortMode == mode) return;
     this.sortMode = mode;
     prefs.edit().putInt(KEY_SORT_MODE, mode).apply();
+  }
+
+  // ---- 自定义图标顺序 ----
+
+  public String getAppOrder() {
+    return appOrder;
+  }
+
+  public void setAppOrder(String order) {
+    this.appOrder = order == null ? "" : order;
+    prefs.edit().putString(KEY_APP_ORDER, this.appOrder).apply();
   }
 }

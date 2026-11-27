@@ -1,7 +1,7 @@
 package cn.modificator.launcher;
 
+import android.app.ActivityManager;
 import android.app.AlertDialog;
-import android.app.admin.DevicePolicyManager;
 import android.content.BroadcastReceiver;
 import android.content.ClipData;
 import android.content.ClipboardManager;
@@ -56,7 +56,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import cn.modificator.launcher.model.AdminReceiver;
 import cn.modificator.launcher.model.AppDataCenter;
 import cn.modificator.launcher.model.HomeEntranceService;
 import cn.modificator.launcher.model.FontManager;
@@ -74,7 +73,6 @@ public class Launcher extends AppCompatActivity
     implements AppItemBinder.Callback, EInkLauncherView.OnPageChangeListener,
     SettingFragment.OnSettingChangeListener {
 
-  private static final int REQUEST_DEVICE_ADMIN = 10001;
   private static final String TAG_SETTINGS_FRAGMENT = "settings_fragment";
 
   // ---- Views ----
@@ -133,8 +131,17 @@ public class Launcher extends AppCompatActivity
   private float pageStatusNormalTextSize;
   private int footerNormalHeight;
 
-  // ---- Device Admin ----
-  private DevicePolicyManager policyManager;
+  // ---- 图标排序 ----
+  private boolean reorderMode;
+  private ResolveInfo reorderFirst;
+  private TextView statusHint;
+  private final Handler statusHintHandler = new Handler(Looper.getMainLooper());
+  private final Runnable hideStatusHintRunnable = new Runnable() {
+    @Override
+    public void run() {
+      if (statusHint != null) statusHint.setVisibility(View.GONE);
+    }
+  };
 
   private static final int FOCUS_NONE = 0;
   private static final int FOCUS_GRID = 1;
@@ -442,8 +449,6 @@ public class Launcher extends AppCompatActivity
   // =========================================================================
 
   private void initViews() {
-    policyManager = (DevicePolicyManager) getSystemService(Context.DEVICE_POLICY_SERVICE);
-
     launcherView = findViewById(R.id.mList);
     launcherView.setFocusable(true);
     launcherView.setFocusableInTouchMode(true);
@@ -461,6 +466,7 @@ public class Launcher extends AppCompatActivity
     topDivider = findViewById(R.id.topDivider);
     pageIndicator = findViewById(R.id.pageIndicator);
     topBatteryProgress = findViewById(R.id.topBatteryProgress);
+    statusHint = findViewById(R.id.statusHint);
     // 记录原始字体，供"系统默认"选项恢复（必须在 applyCustomFont 之前）
     defaultLargeClockTimeTypeface = largeClockTime.getTypeface();
     defaultLargeClockDateTypeface = largeClockDate.getTypeface();
@@ -518,6 +524,7 @@ public class Launcher extends AppCompatActivity
     // 初始化数据中心
     dataCenter = new AppDataCenter(this);
     dataCenter.setSortMode(config.getSortMode());
+    dataCenter.setAppOrder(config.getAppOrder());
     dataCenter.setPageStatus(pageStatus);
 
     // 一次性配置网格参数，避免多次重建
@@ -744,8 +751,10 @@ public class Launcher extends AppCompatActivity
 
   @Override
   public void onSortModeChanged(int mode) {
+    // 切换自动排序方式后，旧的手动顺序不再有意义，避免用户以为排序设置失效
+    config.setAppOrder("");
     dataCenter.setSortMode(mode);
-    dataCenter.refreshAppList(binder.isDelete());
+    dataCenter.setAppOrder("");
   }
 
   @Override
@@ -1036,6 +1045,11 @@ public class Launcher extends AppCompatActivity
   public void onItemClick(ResolveInfo info) {
     String pkgName = info.activityInfo.packageName;
 
+    if (reorderMode) {
+      handleReorderClick(info);
+      return;
+    }
+
     if (AppDataCenter.SETTINGS_PACKAGE_NAME.equals(pkgName)) {
       clearKeyboardFocus();
       openSettingsFragment();
@@ -1059,21 +1073,48 @@ public class Launcher extends AppCompatActivity
 
   @Override
   public void onItemLongClick(View anchor, ResolveInfo info) {
+    if (reorderMode) {
+      cancelReorder();
+      return;
+    }
     String packageName = info.activityInfo.packageName;
 
     if (AppDataCenter.SETTINGS_PACKAGE_NAME.equals(packageName)) {
-      openSettingsFragment();
+      showVirtualItemMenu(info, getString(R.string.dialog_open_settings));
     } else if (AppDataCenter.LOCK_PACKAGE_NAME.equals(packageName)) {
-      showPowerMenu();
+      showPowerMenu(info);
     } else if (AppDataCenter.WIFI_PACKAGE_NAME.equals(packageName)) {
-      WifiControl.onLongClickWifiItem();
-    } else if (AppDataCenter.CLEAR_PACKAGE_NAME.equals(packageName)) {
-      // 内存清理图标，不做任何操作
-    } else if (AppDataCenter.REFRESH_PACKAGE_NAME.equals(packageName)) {
-      // 一键全刷图标，不做任何操作
+      showVirtualItemMenu(info, getString(R.string.dialog_wifi_settings));
+    } else if (AppDataCenter.CLEAR_PACKAGE_NAME.equals(packageName)
+        || AppDataCenter.REFRESH_PACKAGE_NAME.equals(packageName)) {
+      startReorder(info);
     } else {
       showAppInfoDialog(info, packageName);
     }
+  }
+
+  /** 虚拟项长按菜单：保留原有入口，同时提供“调整位置” */
+  private void showVirtualItemMenu(final ResolveInfo info, final String primaryAction) {
+    CharSequence[] actions = {primaryAction, getString(R.string.dialog_reorder)};
+    new AlertDialog.Builder(this)
+        .setTitle(AppDataCenter.getSafeLabel(info, this, getPackageManager()))
+        .setItems(actions, new DialogInterface.OnClickListener() {
+          @Override
+          public void onClick(DialogInterface dialog, int which) {
+            if (which == 0) {
+              String pkg = info.activityInfo.packageName;
+              if (AppDataCenter.SETTINGS_PACKAGE_NAME.equals(pkg)) {
+                openSettingsFragment();
+              } else if (AppDataCenter.WIFI_PACKAGE_NAME.equals(pkg)) {
+                WifiControl.onLongClickWifiItem();
+              }
+            } else {
+              startReorder(info);
+            }
+          }
+        })
+        .setNegativeButton(R.string.dialog_cancel, null)
+        .show();
   }
 
   @Override
@@ -1108,8 +1149,11 @@ public class Launcher extends AppCompatActivity
     updateTimeShow();
   }
 
-  private void showPowerMenu() {
-    if (!isSystemApp) return;
+  private void showPowerMenu(final ResolveInfo info) {
+    if (!isSystemApp) {
+      startReorder(info);
+      return;
+    }
     new AlertDialog.Builder(this)
         .setTitle(R.string.power_title)
         .setItems(R.array.power_menu, new DialogInterface.OnClickListener() {
@@ -1120,9 +1164,11 @@ public class Launcher extends AppCompatActivity
               intent.putExtra("android.intent.extra.KEY_CONFIRM", false);
               intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
               startActivity(intent);
-            } else {
+            } else if (which == 1) {
               PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
               pm.reboot("重启");
+            } else {
+              startReorder(info);
             }
           }
         })
@@ -1134,6 +1180,7 @@ public class Launcher extends AppCompatActivity
     final String key = AppDataCenter.componentKey(info);
     final boolean inDock = config.getDockApps().contains(key);
     CharSequence[] actions = {
+        getString(R.string.dialog_reorder),
         getString(R.string.dialog_app_info),
         inDock ? getString(R.string.dialog_remove_from_dock) : getString(R.string.dialog_add_to_dock),
         getString(R.string.dialog_copy_package_name, packageName),
@@ -1147,16 +1194,18 @@ public class Launcher extends AppCompatActivity
           @Override
           public void onClick(DialogInterface dialog, int which) {
             if (which == 0) {
+              startReorder(info);
+            } else if (which == 1) {
               Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
                   Uri.parse("package:" + packageName));
               startActivity(intent);
-            } else if (which == 1) {
+            } else if (which == 2) {
               if (inDock) {
                 removeAppFromDock(key);
               } else {
                 showDockSlotChooser(info);
               }
-            } else if (which == 2) {
+            } else if (which == 3) {
               ClipboardManager clipboard = (ClipboardManager)
                   getSystemService(Context.CLIPBOARD_SERVICE);
               if (clipboard != null) {
@@ -1164,14 +1213,14 @@ public class Launcher extends AppCompatActivity
                 Toast.makeText(Launcher.this, R.string.package_name_copied,
                     Toast.LENGTH_SHORT).show();
               }
-            } else if (which == 3) {
+            } else if (which == 4) {
               Set<String> hideApps = binder.getHideAppPkg();
               if (!hideApps.add(packageName)) {
                 hideApps.remove(packageName);
               }
               config.setHideApps(new HashSet<>(hideApps));
               dataCenter.setHideApps(config.getHideApps());
-            } else if (which == 4) {
+            } else if (which == 5) {
               Intent deleteIntent = new Intent(Intent.ACTION_DELETE,
                   Uri.parse("package:" + packageName));
               startActivity(deleteIntent);
@@ -1180,6 +1229,57 @@ public class Launcher extends AppCompatActivity
         })
         .setNegativeButton(R.string.dialog_cancel, null)
         .show();
+  }
+
+  // =========================================================================
+  // 图标排序（长按 → 调整位置 → 点击另一个图标交换）
+  // =========================================================================
+
+  private void startReorder(ResolveInfo info) {
+    reorderFirst = info;
+    reorderMode = true;
+    CharSequence label = AppDataCenter.getSafeLabel(info, this, getPackageManager());
+    showStatusHint(getString(R.string.reorder_first, label), true);
+  }
+
+  private void handleReorderClick(ResolveInfo info) {
+    if (reorderFirst == null) {
+      cancelReorder();
+      return;
+    }
+    String keyA = AppDataCenter.componentKey(reorderFirst);
+    String keyB = AppDataCenter.componentKey(info);
+    if (keyA.equals(keyB)) {
+      cancelReorder();
+      return;
+    }
+    CharSequence labelA = AppDataCenter.getSafeLabel(reorderFirst, this, getPackageManager());
+    CharSequence labelB = AppDataCenter.getSafeLabel(info, this, getPackageManager());
+    boolean swapped = dataCenter.swapApps(keyA, keyB);
+    if (swapped) {
+      config.setAppOrder(dataCenter.getComponentKeys());
+      showStatusHint(getString(R.string.reorder_done, labelA, labelB), false);
+    } else {
+      showStatusHint(getString(R.string.reorder_cancelled), false);
+    }
+    reorderFirst = null;
+    reorderMode = false;
+  }
+
+  private void cancelReorder() {
+    reorderFirst = null;
+    reorderMode = false;
+    showStatusHint(getString(R.string.reorder_cancelled), false);
+  }
+
+  private void showStatusHint(CharSequence text, boolean persistent) {
+    if (statusHint == null) return;
+    statusHintHandler.removeCallbacks(hideStatusHintRunnable);
+    statusHint.setText(text);
+    statusHint.setVisibility(View.VISIBLE);
+    if (!persistent) {
+      statusHintHandler.postDelayed(hideStatusHintRunnable, 2500);
+    }
   }
 
   /** 长按桌面 App 后直接选择 Dock 槽位，无需进入设置页 */
@@ -1903,6 +2003,10 @@ public class Launcher extends AppCompatActivity
 
   @Override
   public void onBackPressed() {
+    if (reorderMode) {
+      cancelReorder();
+      return;
+    }
     // 优先关闭设置页面
     if (isSettingsFragmentShown()) {
       closeSettingsFragment();
@@ -1919,52 +2023,17 @@ public class Launcher extends AppCompatActivity
   // 锁屏
   // =========================================================================
 
+  /**
+   * Launcher 是 singleInstance，直接启动 ADD_DEVICE_ADMIN 会被系统以 NEW_TASK 拒绝。
+   * 统一交给透明代理页处理：已激活则直接锁屏，未激活则先激活再锁屏。
+   */
   public void lockScreen() {
     try {
-      if (policyManager.isAdminActive(new ComponentName(this, AdminReceiver.class))) {
-        policyManager.lockNow();
-      } else {
-        requestDeviceAdmin();
-      }
+      Intent intent = new Intent(this, DeviceAdminActivator.class);
+      intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+      startActivity(intent);
     } catch (Exception e) {
-      showDeviceAdminDialog();
-    }
-  }
-
-  private void requestDeviceAdmin() {
-    Intent intent = new Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN);
-    intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, new ComponentName(this, AdminReceiver.class));
-    intent.putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, "E-Ink Launcher 获取锁屏权限");
-    startActivity(intent);
-  }
-
-  private void showDeviceAdminDialog() {
-    new AlertDialog.Builder(this)
-        .setTitle(R.string.launch_failed)
-        .setMessage(R.string.launch_devicemanager_failed)
-        .setPositiveButton(R.string.launch_devicemanager, new DialogInterface.OnClickListener() {
-          @Override
-          public void onClick(DialogInterface dialog, int which) {
-            try {
-              Intent intent = Intent.parseUri(
-                  "intent:#Intent;component=com.android.settings/.DeviceAdminSettings;end",
-                  Intent.URI_INTENT_SCHEME);
-              intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-              startActivity(intent);
-            } catch (Exception e) {
-              e.printStackTrace();
-            }
-          }
-        })
-        .setNegativeButton(R.string.dialog_cancel, null)
-        .show();
-  }
-
-  @Override
-  protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-    super.onActivityResult(requestCode, resultCode, data);
-    if (resultCode == RESULT_OK && requestCode == REQUEST_DEVICE_ADMIN) {
-      policyManager.lockNow();
+      showStatusHint(getString(R.string.lock_admin_failed), false);
     }
   }
 
@@ -1972,24 +2041,68 @@ public class Launcher extends AppCompatActivity
   // 内存清理
   // =========================================================================
 
+  /**
+   * 旧实现直接执行 libfillRam.so，在 Android 8.1 上会把前台 Launcher 一起杀掉，
+   * 导致桌面重启并弹出主屏幕选择器。改为系统标准 API：只清理后台进程，
+   * 显式排除自身，避免自杀；同时用可用内存差值给出结果提示。
+   */
   private void cleanMemory() {
-    String size = null;
-    try {
-      Toast.makeText(this, R.string.clean_start, Toast.LENGTH_SHORT).show();
-      Process shellProcess = new ProcessBuilder(
-          getApplicationInfo().nativeLibraryDir + "/libfillRam.so").start();
-      java.io.BufferedReader reader = new java.io.BufferedReader(
-          new java.io.InputStreamReader(shellProcess.getInputStream()));
-      String line = "";
-      while (line != null) {
-        size = line;
-        line = reader.readLine();
+    showStatusHint(getString(R.string.clean_start), false);
+    new Thread(new Runnable() {
+      @Override
+      public void run() {
+        try {
+          final ActivityManager am =
+              (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+          if (am == null) return;
+          ActivityManager.MemoryInfo before = new ActivityManager.MemoryInfo();
+          am.getMemoryInfo(before);
+
+          Set<String> candidates = new HashSet<String>();
+          String self = getPackageName();
+          List<ActivityManager.RunningAppProcessInfo> processes = am.getRunningAppProcesses();
+          if (processes != null) {
+            for (ActivityManager.RunningAppProcessInfo process : processes) {
+              if (process == null || process.processName == null) continue;
+              if (process.processName.equals(self)
+                  || process.processName.startsWith(self + ":")) continue;
+              if (process.importance < ActivityManager.RunningAppProcessInfo.IMPORTANCE_SERVICE) {
+                continue;
+              }
+              String pkg = process.processName.split(":")[0];
+              if (pkg.length() > 0 && !pkg.equals(self)) candidates.add(pkg);
+            }
+          }
+          for (String pkg : candidates) {
+            try {
+              am.killBackgroundProcesses(pkg);
+            } catch (Throwable ignored) {
+              // 单个包清理失败不影响其他应用
+            }
+          }
+
+          ActivityManager.MemoryInfo after = new ActivityManager.MemoryInfo();
+          am.getMemoryInfo(after);
+          long freed = Math.max(0L, after.availMem - before.availMem);
+          final String freedText = String.format(Locale.getDefault(), "%.1f MB",
+              freed / 1024f / 1024f);
+          statusHintHandler.post(new Runnable() {
+            @Override
+            public void run() {
+              showStatusHint(getString(R.string.clean_done, freedText), false);
+            }
+          });
+        } catch (Throwable e) {
+          Log.e("MemoryClean", "clean failed", e);
+          statusHintHandler.post(new Runnable() {
+            @Override
+            public void run() {
+              showStatusHint(getString(R.string.clean_error, e.getMessage()), false);
+            }
+          });
+        }
       }
-    } catch (Exception e) {
-      Toast.makeText(this, getString(R.string.clean_error, e.getMessage()), Toast.LENGTH_LONG).show();
-      Log.e("MemoryClean", "Error: " + e.getMessage());
-    }
-    Toast.makeText(this, getString(R.string.clean_done, size), Toast.LENGTH_SHORT).show();
+    }, "memory-clean").start();
   }
 
   // =========================================================================

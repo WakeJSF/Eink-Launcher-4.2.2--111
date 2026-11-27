@@ -244,6 +244,23 @@
         </FrameLayout>
     </LinearLayout>
 
+    <!-- 操作提示条：排序/清理结果等短提示，避免 Toast 在墨水屏上不可见 -->
+    <TextView
+        android:id="@+id/statusHint"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|center_horizontal"
+        android:layout_marginTop="80dp"
+        android:background="@color/mainBgColor"
+        android:clickable="false"
+        android:paddingLeft="12dp"
+        android:paddingRight="12dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp"
+        android:textColor="@color/textColor"
+        android:textSize="16sp"
+        android:visibility="gone" />
+
     <!-- SettingFragment 覆盖层 -->
     <FrameLayout
         android:id="@+id/settingContainer"

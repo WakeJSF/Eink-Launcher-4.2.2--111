@@ -65,6 +65,8 @@ public class AppDataCenter {
   private TextView pageStatus;
   private final Set<String> hideApps = new HashSet<>();
   private int sortMode = AppSortComparator.SORT_NAME_ASC;
+  /** 用户自定义的桌面图标顺序，元素为 componentKey */
+  private final List<String> appOrder = new ArrayList<>();
   private volatile boolean shutdown;
 
   public AppDataCenter(Context context) {
@@ -223,6 +225,72 @@ public class AppDataCenter {
     return sortMode;
   }
 
+  /**
+   * 设置用户自定义顺序。传入 null 或空串表示恢复按当前排序方式排列。
+   * 保存的顺序里没有的新应用会追加到末尾，避免应用更新后消失。
+   */
+  public void setAppOrder(String encodedOrder) {
+    appOrder.clear();
+    if (encodedOrder != null && encodedOrder.length() > 0) {
+      String[] parts = encodedOrder.split("\\|", -1);
+      for (String part : parts) {
+        if (part != null && part.length() > 0) appOrder.add(part);
+      }
+    }
+    refreshAppList(false);
+  }
+
+  /** 导出当前完整列表的组件键顺序，供 Config 持久化 */
+  public String getComponentKeys() {
+    StringBuilder builder = new StringBuilder();
+    for (ResolveInfo info : mApps) {
+      if (builder.length() > 0) builder.append('|');
+      builder.append(componentKey(info));
+    }
+    return builder.toString();
+  }
+
+  /** 交换两个桌面图标的位置并立即重绘当前页 */
+  public boolean swapApps(String keyA, String keyB) {
+    if (keyA == null || keyB == null || keyA.equals(keyB)) return false;
+    int indexA = indexOfKey(keyA);
+    int indexB = indexOfKey(keyB);
+    if (indexA < 0 || indexB < 0) return false;
+    ResolveInfo tmp = mApps.get(indexA);
+    mApps.set(indexA, mApps.get(indexB));
+    mApps.set(indexB, tmp);
+    setPageShow();
+    return true;
+  }
+
+  private int indexOfKey(String key) {
+    for (int i = 0; i < mApps.size(); i++) {
+      if (key.equals(componentKey(mApps.get(i)))) return i;
+    }
+    return -1;
+  }
+
+  private void applyAppOrder(List<ResolveInfo> apps) {
+    if (appOrder.isEmpty()) return;
+    List<ResolveInfo> ordered = new ArrayList<>(apps.size());
+    Set<String> used = new HashSet<>();
+    for (String key : appOrder) {
+      for (ResolveInfo info : apps) {
+        if (key.equals(componentKey(info)) && !used.contains(key)) {
+          ordered.add(info);
+          used.add(key);
+          break;
+        }
+      }
+    }
+    // 新安装的应用不在保存的顺序里，按排序结果追加到末尾
+    for (ResolveInfo info : apps) {
+      if (!used.contains(componentKey(info))) ordered.add(info);
+    }
+    apps.clear();
+    apps.addAll(ordered);
+  }
+
   // =========================================================================
   // 翻页
   // =========================================================================
@@ -331,17 +399,20 @@ public class AppDataCenter {
     }
     apps.add(createSettingsIcon());
     sortApps(apps, packageManager, requestSortMode);
-    // 设置入口固定在第一页最后一格，方便随时进入
-    ResolveInfo settingsIcon = null;
-    for (ResolveInfo info : apps) {
-      if (SETTINGS_PACKAGE_NAME.equals(info.activityInfo.packageName)) {
-        settingsIcon = info;
-        break;
+    applyAppOrder(apps);
+    // 没有自定义顺序时，设置入口固定在第一页最后一格；有自定义顺序时尊重用户摆放
+    if (appOrder.isEmpty()) {
+      ResolveInfo settingsIcon = null;
+      for (ResolveInfo info : apps) {
+        if (SETTINGS_PACKAGE_NAME.equals(info.activityInfo.packageName)) {
+          settingsIcon = info;
+          break;
+        }
       }
-    }
-    if (settingsIcon != null) {
-      apps.remove(settingsIcon);
-      apps.add(Math.min(9, apps.size()), settingsIcon);
+      if (settingsIcon != null) {
+        apps.remove(settingsIcon);
+        apps.add(Math.min(9, apps.size()), settingsIcon);
+      }
     }
     return apps;
   }

@@ -1,0 +1,71 @@
+<?xml version='1.0' encoding='utf-8' standalone='yes' ?>
+<package-restrictions>
+<pkg name="com.android.contacts">
+<disabled-components>
+<item name="com.android.contacts.activities.DialtactsActivity" />
+</disabled-components>
+</pkg>
+<pkg name="com.android.provision">
+<disabled-components>
+<item name="com.android.provision.DefaultActivity" />
+</disabled-components>
+</pkg>
+<pkg name="com.android.settings">
+<disabled-components>
+<item name="com.android.settings.CryptKeeper" />
+</disabled-components>
+</pkg>
+<pkg name="com.android.vending">
+<enabled-components>
+<item name="com.google.android.finsky.receivers.BootCompletedReceiver" />
+<item name="com.android.vending.AssetBrowserActivity" />
+<item name="com.google.android.finsky.receivers.AccountsChangedReceiver" />
+<item name="com.google.android.finsky.receivers.PackageMonitorReceiver$RegisteredReceiver" />
+</enabled-components>
+</pkg>
+<pkg name="com.google.android.gm">
+<enabled-components>
+<item name="com.google.android.gm.CreateShortcutActivityGmail" />
+<item name="com.google.android.gm.widget.GmailWidgetProvider" />
+</enabled-components>
+<disabled-components>
+<item name="com.google.android.gm.CreateShortcutActivityGoogleMail" />
+<item name="com.google.android.gm.widget.GoogleMailWidgetProvider" />
+</disabled-components>
+</pkg>
+<pkg name="com.android.email">
+<enabled-components>
+<item name="com.android.email.widget.WidgetConfiguration" />
+</enabled-components>
+<disabled-components>
+<item name="com.android.email.service.AttachmentDownloadService" />
+<item name="com.android.email.activity.ShortcutPicker" />
+<item name="com.android.email.activity.MessageCompose" />
+<item name="com.android.email.service.MailService" />
+</disabled-components>
+</pkg>
+<pkg name="com.google.android.gsf">
+<disabled-components>
+<item name="com.google.android.gsf.loginservice.MigrateToAccountManagerBroadcastReceiver" />
+</disabled-components>
+</pkg>
+<preferred-activities>
+<item name="com.android.orsettings/.DeviceAdminAdd" match="100000" set="2">
+<set name="com.android.orsettings/.DeviceAdminAdd" />
+<set name="com.android.settings/.DeviceAdminAdd" />
+<filter>
+<action name="android.app.action.ADD_DEVICE_ADMIN" />
+<cat name="android.intent.category.DEFAULT" />
+</filter>
+</item>
+<item name="com.boyue.app.byreader/.view.activity.MainActivity" match="100000" set="2">
+<set name="com.boyue.app.byreader/.view.activity.MainActivity" />
+<set name="com.zyyme.einklauncher/cn.modificator.launcher.Launcher" />
+<filter>
+<action name="android.intent.action.MAIN" />
+<cat name="android.intent.category.HOME" />
+<cat name="android.intent.category.DEFAULT" />
+</filter>
+</item>
+</preferred-activities>
+</package-restrictions>
