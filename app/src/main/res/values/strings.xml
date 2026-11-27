@@ -134,7 +134,7 @@
     <string name="sort_need_usage_permission">Please grant usage access permission for this sort mode</string>
     <string name="clean_start">Start cleaning…</string>
     <string name="clean_error">Clean error: %s</string>
-    <string name="clean_done">Cleaned: %s</string>
+    <string name="clean_done">Cleaned: %1$d background processes, freed %2$s</string>
 
     <!-- 自定义桌面字体（App 名字体与大时钟字体独立设置） -->
     <string name="setting_custom_font">App Font</string>

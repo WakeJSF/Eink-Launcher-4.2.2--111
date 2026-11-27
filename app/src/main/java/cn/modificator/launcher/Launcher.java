@@ -2073,9 +2073,11 @@ public class Launcher extends AppCompatActivity
               if (pkg.length() > 0 && !pkg.equals(self)) candidates.add(pkg);
             }
           }
+          int killedCount = 0;
           for (String pkg : candidates) {
             try {
               am.killBackgroundProcesses(pkg);
+              killedCount++;
             } catch (Throwable ignored) {
               // 单个包清理失败不影响其他应用
             }
@@ -2084,12 +2086,13 @@ public class Launcher extends AppCompatActivity
           ActivityManager.MemoryInfo after = new ActivityManager.MemoryInfo();
           am.getMemoryInfo(after);
           long freed = Math.max(0L, after.availMem - before.availMem);
+          final int killedCountFinal = killedCount;
           final String freedText = String.format(Locale.getDefault(), "%.1f MB",
               freed / 1024f / 1024f);
           statusHintHandler.post(new Runnable() {
             @Override
             public void run() {
-              showStatusHint(getString(R.string.clean_done, freedText), false);
+              showStatusHint(getString(R.string.clean_done, killedCountFinal, freedText), false);
             }
           });
         } catch (Throwable e) {

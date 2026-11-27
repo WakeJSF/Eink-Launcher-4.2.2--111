@@ -111,7 +111,7 @@
     <string name="launch_devicemanager_failed">请打开设备管理器并启用 咩E-Ink Launcher</string>
     <string name="clean_start">开始清理…</string>
     <string name="clean_error">清理出错：%s</string>
-    <string name="clean_done">已清理：%s</string>
+    <string name="clean_done">已清理：%1$d 个后台进程，释放 %2$s</string>
     <string name="item_settings">桌面设置</string>
     <string name="item_refresh">全刷</string>
     <string name="dock_manager_title">Dock 应用管理</string>
